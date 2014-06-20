@@ -1,52 +1,39 @@
 .. _ch_traffic_monitor:
 
-トラフィックモニター
-====================
+Traffic Mirror
+==============
 
-本章では、「 :ref:`ch_switching_hub` 」で説明したスイッチングハブに、OpenFlowスイッチ
-の統計情報をモニターする機能を追加します。
+本章針對 「 :ref:`ch_switching_hub` 」 提到的 OpenFlow交換器加入流量監控的功能。
 
+定期檢查網路狀態
+----------------
 
-ネットワークの定期健診
-----------------------
+網路已經成為許多服務或業務的基礎建設，所以維護一個穩定的網路環境是必要的。
+但是，網路問題總是不斷的發生。
 
-ネットワークは既に多くのサービスや業務のインフラとなっているため、正常で
-安定した稼働が維持されることが求められます。とは言え、いつも何かしらの問題
-が発生するものです。
+網路發生異常的時候，必須快速的找到原因，並且儘速恢復原狀。
+這不需要多說，正在閱讀本書的人都知道，找出網路的錯誤，發現真正的原因需要清楚地知道網路的狀態。
+例如，假設網路特定的埠正處於高流量的狀態，不論是因為他是一個不正常的狀態或是任何原因導致變成一個在沒有持續監控的情況下發生的問題。
 
-ネットワークに異常が発生した場合、迅速に原因を特定し、復旧させなければなり
-ません。本書をお読みの方には言うまでもないことと思いますが、異常を検出し、
-原因を特定するためには、日頃からネットワークの状態を把握しておく必要があり
-ます。例えば、あるネットワーク機器のポートのトラフィック量が非常に高い値を
-示していたとして、それが異常な状態なのか、いつもそうなのか、あるいはいつから
-そうなったのかということは、継続してそのポートのトラフィック量を測っていな
-ければ判断することができません。
+因此，為了網路的安全以及業務的正常運作，持續注意網路的健康狀況是最基本的。
+當然，網路流量的監視並不能夠保證不會發生任何問題。
+本章將說明如何使用 OpenFlow 來取得相關的統計資訊。
 
-というわけで、ネットワークの健康状態を常に監視しつづけるということは、その
-ネットワークを使うサービスや業務の継続的な安定運用のためにも必須となります。
-もちろん、トラフィック情報の監視さえしていれば万全などということはありませ
-んが、本章ではOpenFlowによるスイッチの統計情報の取得方法について説明します。
-
-
-トラフィックモニターの実装
+Traffic Monitor 安裝
 --------------------------
 
-早速ですが、「 :ref:`ch_switching_hub` 」で説明したスイッチングハブにトラフィック
-モニター機能を追加したソースコードです。
+下面說明如何在 「 :ref:`ch_switching_hub` 」 中提到的交換器中加入流量監控的功能。
 
 .. rst-class:: sourcecode
 
 .. literalinclude:: sources/simple_monitor.py
 
-SimpleSwitch13を継承したSimpleMonitorクラスに、トラフィックモニター機能を
-実装していますので、ここにはパケット転送に関する処理は出てきません。
+流量監控功能已經被時實作在 SimpleMonitor 類別中並繼承自 SimpleSwitch13 ，所以這邊已經沒有轉送相關的處理功能了。
 
-
-定周期処理
+固定週期處理
 ^^^^^^^^^^
 
-スイッチングハブの処理と並行して、定期的に統計情報取得のリクエストをOpenFlow
-スイッチへ発行するために、スレッドを生成します。
+透過 Switching Hub 的平行處理，建立一個執行緒並定期的向交換器發出要求已取得統計的資料。
 
 .. rst-class:: sourcecode
 
@@ -69,9 +56,7 @@ SimpleSwitch13を継承したSimpleMonitorクラスに、トラフィックモ�
             self.monitor_thread = hub.spawn(self._monitor)
     # ...
 
-``ryu.lib.hub`` には、いくつかのeventletのラッパーや基本的なクラスの実装
-があります。ここではスレッドを生成する ``hub.spawn()`` を使用します。
-実際に生成されるスレッドはeventletのグリーンスレッドです。
+``ryu.lib.hub`` 中實作了一些 eventlet wrapper 和基本的類別。這邊我們使用 ``hub.spawn()`` 建立執行緒。但是實際上是使用 evernlet 的 green 執行緒。
 
 .. rst-class:: sourcecode
 
@@ -98,15 +83,13 @@ SimpleSwitch13を継承したSimpleMonitorクラスに、トラフィックモ�
             hub.sleep(10)
     # ...
 
-スレッド関数 ``_monitor()`` では、登録されたスイッチに対する統計情報取得
-リクエストの発行を10秒間隔で無限に繰り返します。
 
-接続中のスイッチを監視対象とするため、スイッチの接続および切断の検出に
-``EventOFPStateChange`` イベントを利用しています。このイベントはRyuフレーム
-ワークが発行するもので、Datapathのステートが変わったときに発行されます。
+在執行緒中 ``_monitor()`` 方法確保了執行緒可以在每10秒的間隔中，不斷的向註冊的交換器發送要求以取得統計資訊。
 
-ここでは、Datapathのステートが ``MAIN_DISPATCHER`` になった時にそのスイッチ
-を監視対象に登録、 ``DEAD_DISPATCHER`` になった時に登録の削除を行っています。
+為了確認連線中的交換器都可以被持續監控，``EventOFPStateChange``就可以用來監測交換器的連線中斷。
+這個事件偵測是 Ryu 框架所提供的功能，會發生在 Datapath 的狀態改變時。
+
+這邊，當 Datapath 的狀態變成 ``MAIN_DISPATCHER`` 時，代表交換器已經註冊並正處於監視的狀態。當狀態變成  ``DEAD_DISPATCHER`` 時，代表已經從註冊狀態解除。
 
 .. rst-class:: sourcecode
 
@@ -125,21 +108,17 @@ SimpleSwitch13を継承したSimpleMonitorクラスに、トラフィックモ�
         datapath.send_msg(req)
     # ...
 
-定期的に呼び出される ``_request_stats()`` では、スイッチに
-``OFPFlowStatsRequest`` と ``OFPPortStatsRequest`` を発行しています。
+定期呼叫 ``_request_stats()`` 以驅動 ``OFPFlowStatsRequest`` 和 ``OFPPortStatsRequest`` 對交換器發出訊息。
 
-``OFPFlowStatsRequest`` は、フローエントリに関する統計情報をスイッチに要求します。
-テーブルID、出力ポート、cookie値、マッチの条件などで要求対象のフローエントリ
-を絞ることができますが、ここではすべてのフローエントリを対象としています。
+``OFPFlowStatsRequest`` 主要用來對交換器的 Flow entry 取得統計的資料。
+對於交換器發出的要求可以使用 table ID，output port，cookie值和 match 條件來限縮，但是這邊的例子是取得所有的 Flow entry。
 
-``OFPPortStatsRequest`` は、ポートに関する統計情報をスイッチに要求します。
-取得したいポートの番号を指定することが出来ます。ここでは ``OFPP_ANY`` を指定し、
-すべてのポートの統計情報を要求しています。
-
+``OFPPortStatsRequest`` 是用來取得關於交換器的埠相關資訊以及統計訊息。
+使用的時候可以指定埠號，這邊使用 ``OFPP_ANY`` 目的是要取得所以的埠統計資料。
 
 FlowStats
 ^^^^^^^^^
-スイッチからの応答を受け取るため、FlowStatsReplyメッセージを受信するイベントハンドラを作成します。
+為了接收來自于交換器的回應，建立一個 event handler 來接受來自交換器的 FlowStatsReply 訊息。
 
 .. rst-class:: sourcecode
 
@@ -166,18 +145,14 @@ FlowStats
                              stat.packet_count, stat.byte_count)
     # ...
 
-``OPFFlowStatsReply`` クラスの属性 ``body`` は、 ``OFPFlowStats`` のリストで、
-FlowStatsRequestの対象となった各フローエントリの統計情報が格納されています。
+``OPFFlowStatsReply`` 類別的屬性 ``body`` 是 ``OFPFlowStats`` 的列表，其中儲存了每一個 flow entry 的統計資訊，並作為 FlowStatsRequest 的回應。
 
-プライオリティが0のTable-missフローを除いて、全てのフローエントリ
-を選択しています。受信ポートと宛先MACアドレスでソートして、それぞれのフローエントリに
-マッチしたパケット数とバイト数を出力しています。
+權限為零的 Table-miss flow 除外的全部 flow entry 將會被選擇。通過並符合該 flow entry 的封包數和位元數統計資料將會被回傳並以接收埠號和目的 MAC 位址的方式排序。
 
-なお、ここでは一部の数値をログに出しているだけですが、継続的に情報
-を収集、分析するには、外部プログラムとの連携が必要になるでしょう。そのような
-場合、 ``OFPFlowStatsReply`` の内容をJSONフォーマットに変換することができます。
+這邊，為了持續的收集以及分析，僅有一部份的資料會被輸出到記錄檔(log)。因此若要進行分析，連結到外部的程式是必須的。
+在這樣的情況下， ``OFPFlowStatsReply`` 的內容可以被轉會成為 JSON 的格式進行輸出。
 
-例えば次のように書くことができます。
+例如可以寫成如下格式
 
 .. rst-class:: sourcecode
 
@@ -190,7 +165,7 @@ FlowStatsRequestの対象となった各フローエントリの統計情報が�
     self.logger.info('%s', json.dumps(ev.msg.to_jsondict(), ensure_ascii=True,
                                       indent=3, sort_keys=True))
 
-この場合、以下のように出力されます。
+上述的寫法將會產生結果如下
 
 .. rst-class:: console
 
@@ -304,7 +279,7 @@ FlowStatsRequestの対象となった各フローエントリの統計情報が�
 PortStats
 ^^^^^^^^^
 
-スイッチからの応答を受け取るため、PortStatsReplyメッセージを受信するイベントハンドラを作成します。
+為了接收交換器所回覆的訊息，PortStatsReply 訊息接收的事件接收處理必須要被實作。
 
 .. rst-class:: sourcecode
 
@@ -327,26 +302,21 @@ PortStats
                              stat.rx_packets, stat.rx_bytes, stat.rx_errors,
                              stat.tx_packets, stat.tx_bytes, stat.tx_errors)
 
-``OPFPortStatsReply`` クラスの属性 ``body`` は、``OFPPortStats`` のリストになって
-います。
-
-``OFPPortStats`` には、ポート番号、送受信それぞれのパケット数、バイト数、ドロップ
-数、エラー数、フレームエラー数、オーバーラン数、CRCエラー数、コリジョン数など
-の統計情報が格納されます。
-
-ここでは、ポート番号でソートし、受信パケット数、受信バイト数、受信エラー数、
-送信パケット数、送信バイト数、送信エラー数を出力しています。
+``OPFPortStatsReply`` 類別的屬性 ``body`` 會列出在 ``OFPPortStats`` 中的列表。
 
 
-トラフィックモニターの実行
+``OFPPortStats`` 埠號儲存接收端的封包數量，位元數量，丟棄封包數量，錯誤數量，frame錯誤數量，overrrun數量，CRC錯誤數量，collection數量等等的統計資訊。
+
+這邊，依據埠號的排序列出，接收端的風包數量，接收端位元數量，接收錯誤數量，發送封包數量，發送位元數，發送錯誤數量。
+
+Traffic Monitor 執行
 --------------------------
 
-それでは、実際にこのトラフィックモニターを実行してみます。
+接下來，實際的執行流量監控。
 
-まず、「 :ref:`ch_switching_hub` 」と同様にMininetを実行します。ここで、
-スイッチのOpenFlowバージョンにOpenFlow13を設定することを忘れないでください。
+首先，跟「 :ref:`ch_switching_hub` 」一樣的執行 Mininet。這邊，別忘了交換器的 OpenFlow 版本設定為 OpenFlow13。 
 
-次にいよいよトラフィックモニターの実行です。
+下一步，執行流量監控程式。
 
 controller: c0:
 
@@ -396,14 +366,11 @@ controller: c0:
     0000000000000001        3        0        0        0        0        0        0
     0000000000000001 fffffffe        0        0        0        0        0        0
 
-「 :ref:`ch_switching_hub` 」では、ryu-managerコマンド
-にSimpleSwitch13のモジュール名(ryu.app.simple_switch_13)を指定しましたが、
-ここでは、SimpleMonitorのファイル名(./simple_monitor.py)を指定しています。
+在「 :ref:`ch_switching_hub` 」中，我們使用 ryu-manager 指令來設定 SimpleSwitch13 模組名稱 (ryu.app.simple_switch_13)。至於在這邊，則製定 SimpleMonitor 的檔案名稱(./simple_monitor.py)。
 
-この時点では、フローエントリが無く(Table-missフローエントリは表示して
-いません)、各ポートのカウントもすべて0です。
+在這個時候，flow entry 是空白的(Table-miss flow entry 沒有被顯示出來)，每個埠的計數器也都為零。
 
-ホスト1からホスト2へpingを実行してみましょう。
+從 host 1 向 host 2 執行 ping 的指令。
 
 host: h1:
 
@@ -420,8 +387,7 @@ host: h1:
     rtt min/avg/max/mdev = 94.489/94.489/94.489/0.000 ms
     root@ryu-vm:~# 
 
-パケットの転送や、フローエントリが登録され、統計情報
-が変化します。
+封包的轉送，flow entry 的註冊狀況，統計機料開始有了變化。
 
 controller: c0:
 
@@ -440,31 +406,20 @@ controller: c0:
     0000000000000001        3        0        0        0        1       42        0
     0000000000000001 fffffffe        0        0        0        1       42        0
 
-フローエントリの統計情報では、受信ポート1のフローにマッチしたトラフィッ
-クは、1パケット、42バイトと記録されています。受信ポート2では、2パケット、140
-バイトとなっています。
+flow entry 的統計資訊中，接收埠1的 flow match 的流量訊息中，1封包，42位元組的資訊被記錄下來。接收埠2則是 2封包，140位元組。
 
-ポートの統計情報では、ポート1の受信パケット数(rx-pkts)は3、受信バイト数
-(rx-bytes)は182バイト、ポート2も3パケット、182バイトとなっています。
+埠的統計資訊，埠1的封包接收(rx-pkts)數量為 3，接收位元組(rx-bytes)數量為 102 bytes，埠2也是3個封包，182 bytes。
 
-フローエントリの統計情報とポートの統計情報で数字が合っていませんが、これは
-フローエントリの統計情報は、そのエントリにマッチし転送されたパケットの情報だから
-です。つまり、Table-missによりPacket-Inを発行し、Packet-Outで転送された
-パケットは、この統計の対象になっていないためです。
+flow entry 的統計資訊和埠的統計資訊是不可以混為一談的，這是因為 flow entry 的統計資訊是記錄 match 的 entry 所轉送的封包統計資料。也就是說，Table-miss 觸發了 Packet-In 以及 Packet-Out 轉送封包都不能算在統計資料內。
 
-このケースでは、ホスト1が最初にブロードキャストしたARPリクエスト、ホスト2が
-ホスト1に返したARPリプライ、ホスト1がホスト2へ発行したecho requestの3パケット
-が、Packet-Outによって転送されています。
-そのため、ポートの統計量は、フローエントリの統計量よりも多くなっています。
+在這個案例中，host 1 最初的廣播訊息是 ARP request，而 host 2 回覆了 host 1 的 ARP訊息，host 1 對 host 2 發送了 echo request 總共 3 個封包，這些都是透過觸發 Packet-Out 傳送的。
+因此，埠的流量會遠大於 flow entry 的流量。
 
+本章總結
+--------
 
-まとめ
-------
+本章借由取得統計資料作為題目，嘗試說明下列事項。
 
-本章では、統計情報の取得機能を題材として、以下の項目について
-説明しました。
-
-* Ryuアプリケーションでのスレッドの生成方法
-* Datapathの状態遷移の捕捉
-* FlowStatsおよびPortStatsの取得方法
-
+* Ryu 應用程式執行緒產生的方法
+* Datapath 狀態改變的取得
+* FlowStats 和 PortStats 資訊的取得方法

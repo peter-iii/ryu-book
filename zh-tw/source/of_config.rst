@@ -1,41 +1,34 @@
-OF-Configライブラリ
-===================
+OF-Config 函式庫
+================
 
-本章では、Ryuに付属しているOF-Configのクライアントライブラリについて
-紹介します。
+本章將介紹 Ryu 內建的 OF-Config 客戶端函式庫。
 
-OF-Configプロトコル
+OF-Config 通訊協定
 -------------------
 
-OF-ConfigはOpenFlowスイッチの管理のための
-プロトコルです。
-NETCONF(RFC 6241)のスキーマとして定義されており、
-論理スイッチ、ポート、キューなどの状態取得や設定を行なうことができます。
+OF-Config 是用來管理 OpenFlow 交換器的一個通訊協定。
+OF-Config 通訊協定被定義在 NETCONF(RFC 6241) 的標準中，它可以對邏輯交換器的通訊埠(Port)，佇列(Queue)進行設定以及資料截取。
 
-OpenFlowと同じONFが策定したもので、以下のサイトから仕様が入手できます。
+OF-Config 是被同樣制訂 OpenFlow 的 ONF (Open Network Foundation) 所研擬，請參考下列資料以取得更詳盡的資訊。
 
 https://www.opennetworking.org/sdn-resources/onf-specifications/openflow-config
 
-本ライブラリはOF-Config 1.1.1に準拠しています。
+Ryu 提供的函式庫完全相容于 OF-Config 1.1.1 版本
 
 .. NOTE::
-    現在Open vSwitchはOF-Configをサポートしていませんが、
-    同じ目的のためにOVSDBというサービスを提供しています。
-    OF-Configは比較的新しい規格で、Open vSwitchがOVSDBを
-    実装したときにはまだ存在していませんでした。
+    目前 Open vSwitch 並不支援 OF-Config，僅提供 OVSDB 作為替代。
+    由於 OF-Config 還算是比較新的規格，因此 Open vSwitch 的 OVSDB 並不實作 OF-Config。
 
-    OVSDBプロトコルはRFC 7047として仕様が公開されていますが、
-    事実上Open vSwitch専用のプロトコルとなっています。
-    OF-Configはまだ登場から日が浅いですが、将来的に
-    多くのOpenFlowスイッチで実装されることが期待されます。
+    OVSDB 通訊協定雖然公開規範在 RFC 7047 作為標準，但事實上目前僅作為 Open vSwitch 專用的通訊協定。
+    而 OF-Config 相對來說還是相對新的協定，期望在不久的將來會有更多實作它的 OpenFlow 交換器出現。
 
-ライブラリ構成
+函式庫架構
 --------------
 
-ryu.lib.of_config.capable_switch.OFCapableSwitchクラス
+ryu.lib.of_config.capable_switch.OFCapableSwitch Class
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-NETCONFセッションを扱うためのクラスです。
+本 Class 主要用來處理 NETCONF 會話(Session)。
 
 .. rst-class:: sourcecode
 
@@ -43,16 +36,14 @@ NETCONFセッションを扱うためのクラスです。
 
         from ryu.lib.of_config.capable_switch import OFCapableSwitch
 
-ryu.lib.of_config.classesモジュール
+ryu.lib.of_config.classes 模組(Module)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-設定内容をpythonオブジェクトとして扱うためのクラス群を提供する
-モジュールです。
+本模組用來將協定相關的設定對應至 Python 物件。
 
 .. NOTE::
-    クラス名は基本的にOF-Config 1.1.1のyang specification上の
-    groupingキーワードで使われている名前と同じです。
-    例. OFPortType
+    類別名稱基本上遵照 OF-Config 1.1.1 中 yang specification 的 Grouping 關鍵字名稱來命名。
+    例如：OFPortType
 
 .. rst-class:: sourcecode
 
@@ -60,15 +51,15 @@ ryu.lib.of_config.classesモジュール
 
         import ryu.lib.of_config.classes as ofc
 
-使用例
+使用範例
 ------
 
-スイッチへの接続
+交換器的連結
 ^^^^^^^^^^^^^^^^
 
-SSHトランスポートを使用してスイッチに接続します。
-unknown_host_cbには、不明なSSHホスト鍵の処理を行なうコールバック関数を
-指定しますが、ここでは無条件に接続を継続するようにしています。
+使用 SHH Transport 連線到交換器。
+回呼函式 unknown_host_cb 是用來對應未知的 SSH Host Key 時所被執行的函式。
+下面的範例中我們使用無條件信任對方並繼續進行連結。
 
 .. rst-class:: sourcecode
 
@@ -84,10 +75,9 @@ unknown_host_cbには、不明なSSHホスト鍵の処理を行なうコール�
 GET
 ^^^
 
-NETCONF GETを使用して状態を取得する例です。
-全てのポートの
-/resources/port/resource-idと
-/resources/port/current-rateを表示します。
+使用 NETCONF GET 來取得交換器的狀態。
+下面的範例將會用
+/resources/port/resource-id 和 /resources/port/current-rate 表示所有埠的狀態。
 
 .. rst-class:: sourcecode
 
@@ -100,16 +90,15 @@ NETCONF GETを使用して状態を取得する例です。
 GET-CONFIG
 ^^^^^^^^^^
 
-NETCONF GET-CONFIGを使用して設定を取得する例です。
+下面的範例是使用 NETCONF GET-CONFIG 用來取得目前的交換器設定值。
 
 .. NOTE::
-    runningというのはNETCONFのデータストアで、現在動作している設定です。
-    実装によりますが、他にもstartup(デバイスの起動時に読み込まれる設定)
-    やcandidate(候補設定)などのデータストアが利用できます。
+    running 用來表示現在儲存在 NETCONF 中目前的設定狀態。
+    但這跟交換器的實作有關，或者你也可以儲存相關設定在 startup (設備啟動時)或 candidate (Candidate set)。
 
-全てのポートの
-/resources/port/resource-idと
-/resources/port/configuration/admin-stateを表示します。
+其結果會使用
+/resources/port/resource-id 和
+/resources/port/configuration/admin-state 表示所有埠的狀態。
 
 .. rst-class:: sourcecode
 
@@ -122,16 +111,14 @@ NETCONF GET-CONFIGを使用して設定を取得する例です。
 EDIT-CONFIG
 ^^^^^^^^^^^
 
-NETCONF EDIT-CONFIGを使用して設定を変更する例です。
-基本的に、GET-CONFIGで取得した設定を編集してEDIT-CONFIGで
-送り返す、という手順になります。
+這個範例說明如何使用 NETCONF EDIT-CONFIG 來對設定進行變更。
+首先使用 GET-CONFIG 取得交換器的設定，進行相關的編輯動作，最後使用 EDIT-CONFIG 將變更傳送至交換器。
 
 .. NOTE::
-    プロトコル上はEDIT-CONFIGで設定の部分的な編集を行なうことも
-    できますが、このような使い方が無難です。
+    另外也可以使用 EDIT-CONFIG 直接修改部分的設定，這樣做將更為安全。
 
-全てのポートの
-/resources/port/configuration/admin-stateをdownに設定します。
+將全部的埠狀態在
+/resources/port/configuration/admin-state 中設定為 down。
 
 .. rst-class:: sourcecode
 

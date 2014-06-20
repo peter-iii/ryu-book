@@ -1,18 +1,14 @@
 .. _ch_rest_firewall:
 
-ファイアウォール
-================
+防火牆
+======
 
-本章では、RESTで設定が出来る
-ファイアウォールの使用方法について説
-明します。
+本章將說明如何利用 REST 的方式使用防火牆。
 
-
-シングルテナントでの動作例
+Single tenant 操作範例
 --------------------------
 
-以下のようなトポロジを作成し、スイッチs1に対してルー
-ルの追加・削除を行う例を紹介します。
+以下說明如何建立一個如下所示的拓璞，並且對交換器 s1 進行路由的增加和刪除。
 
 .. only:: latex
 
@@ -35,8 +31,7 @@
 環境構築
 ^^^^^^^^
 
-まずはMininet上に環境を構築します。入力するコマンドは
-「 :ref:`ch_switching_hub` 」と同様です。
+首先在 Mininet 上建構環境。所要輸入的指令跟 「 :ref:`ch_switching_hub` 」 是一樣的。
 
 .. rst-class:: console
 
@@ -62,7 +57,7 @@
     *** Starting CLI:
     mininet>
 
-また、コントローラ用のxtermをもうひとつ起動しておきます。
+藉著，建立一個新的 xterm 用來操作 controller。
 
 .. rst-class:: console
 
@@ -71,7 +66,7 @@
     mininet> xterm c0
     mininet>
 
-続いて、使用するOpenFlowのバージョンを1.3に設定します。
+繼續，將 OpenFlow 的版本設定為 1.3。
 
 switch: s1 (root):
 
@@ -81,7 +76,7 @@ switch: s1 (root):
 
     root@ryu-vm:~# ovs-vsctl set Bridge s1 protocols=OpenFlow13
 
-最後に、コントローラのxterm上でrest_firewallを起動させます。
+最後，在控制 controller 的 xterm 上啟動 rest_firewall。
 
 controller: c0 (root):
 
@@ -99,7 +94,7 @@ controller: c0 (root):
     instantiating app ryu.controller.ofp_handler of OFPHandler
     (2210) wsgi starting up on http://0.0.0.0:8080/
 
-Ryuとスイッチの間の接続に成功すると、次のメッセージが表示されます。
+Ryu 和交換器中間的連線已經完成後，接著會出現下面的訊息。
 
 controller: c0 (root):
 
@@ -114,13 +109,12 @@ controller: c0 (root):
 初期状態の変更
 ^^^^^^^^^^^^^^
 
-firewallの起動直後は、すべての通信を遮断するよう無効状態となっています。
-次のコマンドで有効(enable)にします。
+防火牆啟動後，初始狀態下全部的網路都會處於無法連線的狀態。
+接下來我們要下指令使其生效，開放網路的連線。
 
 .. NOTE::
 
-    以降の説明で使用するREST APIの詳細は、章末の「 `REST API一覧`_ 」を参照
-    してください。
+    接下來的說明會使用到 REST API，若需要詳細的解釋請參考本章結尾的 「 `REST API列表`_ 」。
 
 
 Node: c0 (root):
@@ -150,11 +144,10 @@ Node: c0 (root):
 
 .. NOTE::
 
-    RESTコマンドの実行結果は見やすいように整形しています。
+    REST 命令執行的結果已經被格式為較為容易理解的格式。
 
-
-h1からh2へのpingの疎通を確認してみます。
-しかし、アクセス許可のルールを設定していないため遮断されてしまいます。
+確認可以從 h1 向 h2 執行 ping 指令。
+但是，存取的權限規則並沒有被設定，所以目前是處於無法連通的狀態。
 
 host: h1:
 
@@ -168,7 +161,7 @@ host: h1:
     --- 10.0.0.2 ping statistics ---
     20 packets transmitted, 0 received, 100% packet loss, time 19003ms
 
-遮断されたパケットはログに出力されます。
+封包被阻擋的過程被寫進記錄擋中。
 
 controller: c0 (root):
 
@@ -179,13 +172,12 @@ controller: c0 (root):
     [FW][INFO] dpid=0000000000000001: Blocked packet = ethernet(dst='00:00:00:00:00:02',ethertype=2048,src='00:00:00:00:00:01'), ipv4(csum=9895,dst='10.0.0.2',flags=2,header_length=5,identification=0,offset=0,option=None,proto=1,src='10.0.0.1',tos=0,total_length=84,ttl=64,version=4), icmp(code=0,csum=55644,data=echo(data='K\x8e\xaeR\x00\x00\x00\x00=\xc6\r\x00\x00\x00\x00\x00\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f !"#$%&\'()*+,-./01234567',id=6952,seq=1),type=8)
     ...
 
-ルール追加
+新增規則
 ^^^^^^^^^^
 
-h1とh2の間でpingを許可するルールを追加します。双方向にルール
-を追加をする必要があります。
+增加 h1 和 h2 之間允許 ping 發送的規則。不論是哪個方向都需要加入。
 
-次のルールを追加してみましょう。ルールIDは自動採番されます。
+接下來新增規則。規則的編號會自動編碼。
 
 ============  ============  ===========  =====  ===========
 送信元        宛先          プロトコル   可否   (ルールID)
@@ -226,7 +218,7 @@ Node: c0 (root):
         }
       ]
 
-追加したルールがフローエントリとしてスイッチに登録されます。
+新增加的規則作為 flow entry 被註冊到交換器中ㄡ
 
 switch: s1 (root):
 
@@ -241,11 +233,10 @@ switch: s1 (root):
      cookie=0x1, duration=145.05s, table=0, n_packets=0, n_bytes=0, priority=1,icmp,nw_src=10.0.0.1,nw_dst=10.0.0.2 actions=NORMAL
      cookie=0x2, duration=118.265s, table=0, n_packets=0, n_bytes=0, priority=1,icmp,nw_src=10.0.0.2,nw_dst=10.0.0.1 actions=NORMAL
 
-また、h2とh3の間で、pingを含むすべてのIPv4パケットを許可するよう
-ルールを追加します。
+接著，h2 和 h3 之間，新增加允許包含 ping 的所有 ipv4 封包通過的規則。
 
 ============  ============  ===========  =====  ===========
-送信元        宛先          プロトコル   可否   (ルールID)
+來源           目的          通訊協定(protocol)   連線   (規則ID)
 ============  ============  ===========  =====  ===========
 10.0.0.2/32   10.0.0.3/32   any          許可   3
 10.0.0.3/32   10.0.0.2/32   any          許可   4
@@ -283,7 +274,7 @@ Node: c0 (root):
         }
       ]
 
-追加したルールがフローエントリとしてスイッチに登録されます。
+新增的規則作為 flow entry 被註冊到交換器當中。
 
 switch: s1 (root):
 
@@ -299,14 +290,13 @@ switch: s1 (root):
      cookie=0x1, duration=362.147s, table=0, n_packets=0, n_bytes=0, priority=1,icmp,nw_src=10.0.0.1,nw_dst=10.0.0.2 actions=NORMAL
      cookie=0x2, duration=335.362s, table=0, n_packets=0, n_bytes=0, priority=1,icmp,nw_src=10.0.0.2,nw_dst=10.0.0.1 actions=NORMAL
 
-ルールには優先度を設定することが出来ます。
+可以設定規則的優先權。
 
-h2とh3の間でping(ICMP)を遮断するルールを
-追加してみましょう。
-優先度としてデフォルト値の1より大きい値を設定します。
+新增阻斷 h2 和 h3 之間的 ping (ICMP)封包規則。
+優先權的預設值設定為大於1的值。
 
 =========  ============  ============  ===========  =====  ===========
-(優先度)   送信元        宛先          プロトコル   可否   (ルールID)
+(優先權)     來源           目的          協定(protocol)   連線   (規則ID)
 =========  ============  ============  ===========  =====  ===========
 10         10.0.0.2/32   10.0.0.3/32   ICMP         遮断   5
 10         10.0.0.3/32   10.0.0.2/32   ICMP         遮断   6
@@ -344,7 +334,7 @@ Node: c0 (root):
         }
       ]
 
-追加したルールがフローエントリとしてスイッチに登録されます。
+新增的規則作為 flow entry 註冊到交換器當中。
 
 switch: s1 (root):
 
@@ -364,10 +354,10 @@ switch: s1 (root):
      cookie=0x2, duration=564.793s, table=0, n_packets=0, n_bytes=0, priority=1,icmp,nw_src=10.0.0.2,nw_dst=10.0.0.1 actions=NORMAL
 
 
-ルール確認
+規則確認
 ^^^^^^^^^^
 
-設定されているルールを確認します。
+確認已經設定完成的規則。
 
 Node: c0 (root):
 
@@ -440,7 +430,7 @@ Node: c0 (root):
         }
       ]
 
-設定したルールを図示すると以下のようになります。
+設定完成的規則如下。
 
 .. only:: latex
 
@@ -459,8 +449,7 @@ Node: c0 (root):
      :scale: 40%
      :align: center
 
-h1からh2にpingを実行してみます。許可するルールが設定されているので、pingが疎通
-します。
+從 h1 對 h2 執行 ping 。如果允許的規則有被正確設定的話，ping 就可以正常連線。 
 
 host: h1:
 
@@ -476,8 +465,7 @@ host: h1:
     64 bytes from 10.0.0.2: icmp_req=4 ttl=64 time=0.033 ms
     ...
 
-h1からh2へのping以外のパケットはfirewallによって遮断されます。例えばh1から
-h2にwgetを実行すると、パケットが遮断された旨ログが出力されます。
+而並非從 h1 發送到 h2 的封包則會被防火牆所阻擋。例如 從 h1 發送到 h2 的 wget 指令就會被阻擋下來並記錄在記錄檔(log)中。
 
 host: h1:
 
@@ -498,9 +486,7 @@ controller: c0 (root):
     [FW][INFO] dpid=0000000000000001: Blocked packet = ethernet(dst='00:00:00:00:00:02',ethertype=2048,src='00:00:00:00:00:01'), ipv4(csum=4812,dst='10.0.0.2',flags=2,header_length=5,identification=5102,offset=0,option=None,proto=6,src='10.0.0.1',tos=0,total_length=60,ttl=64,version=4), tcp(ack=0,bits=2,csum=45753,dst_port=80,offset=10,option='\x02\x04\x05\xb4\x04\x02\x08\n\x00H:\x99\x00\x00\x00\x00\x01\x03\x03\t',seq=1021913463,src_port=42664,urgent=0,window_size=14600)
     ...
 
-h2とh3の間はping以外のパケットの疎通が可能となっています。例えばh2からh3に
-sshを実行すると、パケットが遮断された旨のログは出力されません(h3でsshdが動
-作していないため、sshでの接続には失敗します)。
+h2 和 h3 之間除了 ping 以外的封包則允許被通過。例如 從 h2 向 h3 發送 ssh 指定，記錄檔中並不會出現封包被阻擋的記錄(如果 ssh 是發送到 h3 以外的地點，則 ssh 的連線將會失敗)。
 
 host: h2:
 
@@ -511,8 +497,7 @@ host: h2:
     root@ryu-vm:~# ssh 10.0.0.3
     ssh: connect to host 10.0.0.3 port 22: Connection refused
 
-h2からh3にpingを実行すると、パケットがfirewallによって遮断された旨ログが出
-力されます。
+從 h2 向 h3 發送 ping 指令，封包將會被防火牆所阻擋，並出現在記錄在記錄檔中。
 
 host: h2:
 
@@ -536,10 +521,10 @@ controller: c0 (root):
     ...
 
 
-ルール削除
+規則刪除
 ^^^^^^^^^^
 
-"rule_id:5"および"rule_id:6"のルールを削除します。
+刪除 "rule_id:5" 和 "rule_id:6" 的規則。
 
 Node: c0 (root):
 
@@ -573,8 +558,7 @@ Node: c0 (root):
         }
       ]
 
-
-現在のルールを図示すると以下のようになります。
+現在的規則如下圖所示。
 
 .. only:: latex
 
@@ -593,9 +577,7 @@ Node: c0 (root):
      :scale: 40%
      :align: center
 
-
-実際に確認します。h2とh3の間のping(ICMP)を遮断するルールが削除されたため、
-pingが疎通できるようになったことがわかります。
+經實際確認。h2 和 h3 之間的 ping (ICMP) 阻擋連線的規則刪除後， ping 指定現在可以被正常執行並進行通訊。
 
 host: h2:
 
@@ -612,12 +594,10 @@ host: h2:
     ...
 
 
-マルチテナントでの動作例
+Multi tenant 操作範例
 ------------------------
 
-続いて、VLANによるテナント分けが行われている以下のようなトポロジを作成し、
-スイッチs1に対してルールの追加・削除を行い、各ホスト間の疎通可否を確認する例
-を紹介します。
+接下來，這個例子將建立拓璞並使用VLAN來對 tenants 進行處理，還有像是路由或是位址對於交換器 s1 對的新增或刪除，以及每一個埠之間的連通做驗證。
 
 .. only:: latex
 
@@ -640,9 +620,7 @@ host: h2:
 環境構築
 ^^^^^^^^
 
-シングルテナントでの例と同様、Mininet上に環境を構築し、コントローラ用のxterm
-をもうひとつ起動しておきます。使用するホストがひとつ増えていることにご注意くだ
-さい。
+下面的例子使用 Single-tenant ，在 Mininet 上進行環境的建置，另外開啟一個 xterm 作為控制 controller 的方法，請注意與之前相比這邊需要多一台host。
 
 .. rst-class:: console
 
@@ -669,7 +647,7 @@ host: h2:
     mininet> xterm c0
     mininet>
 
-続いて、各ホストのインターフェースにVLAN IDを設定します。
+接下來，到每一個 host 的界面中設定 VLAN ID。
 
 host: h1:
 
@@ -715,7 +693,7 @@ host: h4:
     root@ryu-vm:~# ip addr add 10.0.0.4/8 dev h4-eth0.110
     root@ryu-vm:~# ip link set dev h4-eth0.110 up
 
-さらに、使用するOpenFlowのバージョンを1.3に設定します。
+接著，將使用的 OpenFlow的版本設定為 1.3。
 
 switch: s1 (root):
 
@@ -725,7 +703,7 @@ switch: s1 (root):
 
     root@ryu-vm:~# ovs-vsctl set Bridge s1 protocols=OpenFlow13
 
-最後に、コントローラのxterm上でrest_firewallを起動させます。
+最後，從 controller 的 xterm 畫面中啟動 rest_firewall 。
 
 controller: c0 (root):
 
@@ -743,7 +721,7 @@ controller: c0 (root):
     instantiating app ryu.controller.ofp_handler of OFPHandler
     (13419) wsgi starting up on http://0.0.0.0:8080/
 
-Ryuとスイッチの間の接続に成功すると、次のメッセージが表示されます。
+Ryu 和交換器之間的連線已經成功的話，就會出現接下來的訊息。
 
 controller: c0 (root):
 
@@ -754,10 +732,10 @@ controller: c0 (root):
     [FW][INFO] switch_id=0000000000000001: Join as firewall
 
 
-初期状態の変更
+變更初始狀態
 ^^^^^^^^^^^^^^
 
-firewallを有効(enable)にします。
+啟動防火牆。
 
 Node: c0 (root):
 
@@ -785,18 +763,17 @@ Node: c0 (root):
       ]
 
 
-ルール追加
-^^^^^^^^^^
+新增防火牆規則
+^^^^^^^^^^^^
 
-vlan_id=2に10.0.0.0/8で送受信されるping(ICMPパケット)を許可するルールを追
-加します。双方向にルールを設定をする必要がありますので、ルールをふたつ追加し
-ます。
+新增允許使用 VLAN_ID=2 向 10.0.0.0/8 發送ping訊息 (ICMP封包) 的規則到交換器中。
+雙向的規則設定是必要的。
 
 =========  ========  ============  ============  ===========  =====  ===========
-(優先度)   VLAN ID   送信元        宛先          プロトコル   可否   (ルールID)
+(優先權)    VLAN ID   來源           目的           協定          允許   (規則ID)
 =========  ========  ============  ============  ===========  =====  ===========
-1          2         10.0.0.0/8    any           ICMP         許可   1
-1          2         any           10.0.0.0/8    ICMP         許可   2
+1          2         10.0.0.0/8    any           ICMP         允許   1
+1          2         any           10.0.0.0/8    ICMP         允許   2
 =========  ========  ============  ============  ===========  =====  ===========
 
 Node: c0 (root):
@@ -834,10 +811,10 @@ Node: c0 (root):
       ]
 
 
-ルール確認
-^^^^^^^^^^
+規則確認
+^^^^^^^^
 
-設定されているルールを確認します。
+確認已經設定的規則。
 
 Node: c0 (root):
 
@@ -878,8 +855,7 @@ Node: c0 (root):
       ]
 
 
-実際に確認してみます。vlan_id=2であるh1から、同じくvlan_id=2であるh2に対し、
-pingを実行すると、追加したルールのとおり疎通できることがわかります。
+讓我們確認一下實際狀況。在 VLAN_ID=2 的情況下，從 h1 發送的 ping 在 h2 也同樣是 VLAN_ID=2 的情況下，你會發現他是連通的，因為我們剛才把規則加入。
 
 host: h1:
 
@@ -895,9 +871,7 @@ host: h1:
     64 bytes from 10.0.0.2: icmp_req=4 ttl=64 time=0.047 ms
     ...
 
-
-vlan_id=110同士であるh3とh4の間は、ルールが登録されていないため、pingパケッ
-トは遮断されます。
+VLAN_ID=110 的情況下 h3 和 h4 之間，由於規則沒有被加入，所以 ping 封包被阻擋。
 
 host: h3:
 
@@ -911,7 +885,7 @@ host: h3:
     --- 10.0.0.4 ping statistics ---
     6 packets transmitted, 0 received, 100% packet loss, time 4999ms
 
-パケットが遮断されたのでログが出力されます。
+封包被阻斷的時候會被記錄在記錄檔之中。
 
 controller: c0 (root):
 
@@ -922,63 +896,59 @@ controller: c0 (root):
     [FW][INFO] dpid=0000000000000001: Blocked packet = ethernet(dst='00:00:00:00:00:04',ethertype=33024,src='00:00:00:00:00:03'), vlan(cfi=0,ethertype=2048,pcp=0,vid=110), ipv4(csum=9891,dst='10.0.0.4',flags=2,header_length=5,identification=0,offset=0,option=None,proto=1,src='10.0.0.3',tos=0,total_length=84,ttl=64,version=4), icmp(code=0,csum=58104,data=echo(data='\xb8\xa9\xaeR\x00\x00\x00\x00\xce\xe3\x02\x00\x00\x00\x00\x00\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f !"#$%&\'()*+,-./01234567',id=7760,seq=4),type=8)
     ...
 
-本章では、具体例を挙げながらファイアウォールの使用方法を説明しました。
+本章中，透過具體的例子說明學到如何使用防火牆。
 
-
-REST API一覧
+REST API 列表
 ------------
 
-本章で紹介したrest_firewallのREST API一覧です。
+本章說明中所提到的 rest_firewall REST API 一覽。
 
-
-全スイッチの有効無効状態の取得
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+取得所有交換器的防火牆狀態
+^^^^^^^^^^^^^^^^^^^^^^
 
 =============  ========================
-**メソッド**   GET
+**方法**        GET
 **URL**        /firewall/module/status
 =============  ========================
 
-
-各スイッチの有効無効状態の変更
+每一個交換器的防火牆狀態變更
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 =============  ================================================
-**メソッド**   PUT
+**方法**        PUT
 **URL**        /firewall/module/{**op**}/{**switch**}
 
                --**op**: [ "enable" \| "disable" ]
 
                --**switch**: [ "all" \| *スイッチID* ]
-**備考**       各スイッチの初期状態は"disable"になっています。
+**備註**        每一個交換器的初始狀態均為 "disable" 
 =============  ================================================
 
-
-全ルールの取得
+取得全部規則
 ^^^^^^^^^^^^^^
 
 =============  ==========================================
-**メソッド**   GET
+**方法**        GET
 **URL**        /firewall/rules/{**switch**}[/{**vlan**}]
 
                --**switch**: [ "all" \| *スイッチID* ]
 
                --**vlan**: [ "all" \| *VLAN ID* ]
-**備考**        VLAN IDの指定はオプションです。
+**備註**        VLAN ID的指定可選擇加或不加。
 =============  ==========================================
 
 
-ルールの追加
+新增規則
 ^^^^^^^^^^^^
 
 =============  =========================================================
-**メソッド**   POST
+**方法**        POST
 **URL**        /firewall/rules/{**switch**}[/{**vlan**}]
 
                --**switch**: [ "all" \| *スイッチID* ]
 
                --**vlan**: [ "all" \| *VLAN ID* ]
-**データ**     **priority**:[ 0 - 65535 ]
+**資料**        **priority**:[ 0 - 65535 ]
 
                **in_port**:[ 0 - 65535 ]
 
@@ -999,45 +969,45 @@ REST API一覧
                **tp_dst**:[ 0 - 65535 ]
 
                **actions**: [ "ALLOW" \| "DENY" ]
-**備考**       登録に成功するとルールIDが生成され、応答に記載されます。
+**備註**       註冊成功的規則會自動產生規則ID，並註明在回應的訊息中。
 
-               VLAN IDの指定はオプションです。
+               指定 VLAN ID 為可附加之選項。
 =============  =========================================================
 
 
-ルールの削除
+規則的刪除
 ^^^^^^^^^^^^
 
 =============  ==========================================
-**メソッド**   DELETE
+**方法**       DELETE
 **URL**        /firewall/rules/{**switch**}[/{**vlan**}]
 
                --**switch**: [ "all" \| *スイッチID* ]
 
                --**vlan**: [ "all" \| *VLAN ID* ]
-**データ**     **rule_id**:[ "all" \| 1 - ... ]
-**備考**        VLAN IDの指定はオプションです。
+**資料**        **rule_id**:[ "all" \| 1 - ... ]
+**備註**        指定 VLAN ID 為可附加之選項。
 =============  ==========================================
 
 
-全スイッチのログ出力状態の取得
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+取得所有交換器的記錄檔
+^^^^^^^^^^^^^^^^^^^
 
 =============  ====================
-**メソッド**   GET
+**方法**        GET
 **URL**        /firewall/log/status
 =============  ====================
 
 
-各スイッチのログ出力状態の変更
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+變更交換器記錄檔的格式
+^^^^^^^^^^^^^^^^^^^
 
 =============  ===============================================
-**メソッド**   PUT
+**方法**   PUT
 **URL**        /firewall/log/{**op**}/{**switch**}
 
                --**op**: [ "enable" \| "disable" ]
 
                --**switch**: [ "all" \| *スイッチID* ]
-**備考**       各スイッチの初期状態は"enable"になっています。
+**備註**       設定每一個交換器的初始狀態為”啟用”
 =============  ===============================================

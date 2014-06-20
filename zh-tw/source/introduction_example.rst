@@ -1,20 +1,17 @@
 .. _ch_introduction_example:
 
-導入事例
-======================
+應用案例
+========
 
-本章では、Ryuを利用したサービス／製品の事例について紹介します。
+本章介紹一些使用 Ryu 作為產品或服務的案例。
 
-
-Stratosphere SDN Platform (ストラトスフィア)
+Stratosphere SDN Platform (Stratosphere)
 ------------------------------------------------
 
-Stratosphere SDN Platform(以下SSP)は、ストラトスフィア社の開発する
-ソフトウェア製品です。
-SSPを用いることでVXLAN,STT,MPLSといったトンネリングプロトコルを用いて、
-エッジオーバレイ型の仮想ネットワークを構築できます。
+Stratosphere SDN Platform(以下簡稱SSP) 是 Stratosphere 公司所開發的軟體。
+使用 SSP 可以建構 Edge Overlay-model 的虛擬網路，並使用 Tunnelling 例如：VXLAN，STT 和 MPLS。 
 
-各トンネリングプロトコルはVLANと相互に変換されます。
+每一個通道協定在VLAN間互相轉換。
 各トンネリングプロトコルの識別子はVLANの12ビットよりも大きいことから、
 VLANを直接使うよりも多くのL2セグメントが管理できます。
 またSSPはOpenStackやCloudStackといったIaaSソフトウェアと組み合わせて
@@ -44,7 +41,7 @@ REST APIを通してSSPの他のコンポーネントとやり取りします。
 
 
 
-SmartSDN Controller (NTTコムウェア)
+SmartSDN Controller (NTT COMWARE)
 -----------------------------------
 
 「SmartSDN Controller」は、従来の自律分散制御にかわるネットワークの

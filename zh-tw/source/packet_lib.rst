@@ -1,26 +1,22 @@
 .. _ch_packet_lib:
 
-パケットライブラリ
-==================
+封包函式庫
+==========
 
-OpenFlowのPacket-InやPacket-Outメッセージには、生のパケット内容
-をあらわすバイト列が入るフィールドがあります。
-Ryuには、このような生のパケットをアプリケーションから扱いやすく
-するためのライブラリが用意されています。
-本章はこのライブラリについて紹介します。
+OpenFlow 中 Packet-In 和 Packet-Out 訊息是用來產生封包，可在當中的欄位放入 Byte 資料並轉換為原始封包的方法。
+Ryu 提供了相當容易使用的封包產生函式庫給應用程式使用。
+本章將介紹該函式庫。
 
-
-基本的な使い方
+基本使用方法
 --------------
 
-プロトコルヘッダクラス
+Protocol Header Class
 ^^^^^^^^^^^^^^^^^^^^^^
 
-Ryuパケットライブラリには、色々なプロトコルヘッダに対応するクラス
-が用意されています。
+Ryu 封包函式庫提供許多協定對應的類別，用來解析或包裝封包。
 
-以下のものを含むプロトコルがサポートされています。
-各プロトコルに対応するクラスなどの詳細は `APIリファレンス <http://ryu.readthedocs.org/en/latest/>`_ をご参照ください。
+下面列出 Ryu 目前所知支援的協定。
+若需要了解每個協定的細節請參照 `APIリファレンス <http://ryu.readthedocs.org/en/latest/>`_ 
 
 - arp
 - bgp
@@ -44,14 +40,12 @@ Ryuパケットライブラリには、色々なプロトコルヘッダに対�
 - vlan
 - vrrp
 
-各プロトコルヘッダクラスの__init__引数名は、基本的にはRFCなどで
-使用されている名前と同じになっています。
-プロトコルヘッダクラスのインスタンス属性の命名規則も同様です。
-ただし、typeなど、Python built-inと衝突する名前のフィールドに対応する
-__init__引数名には、type_のように最後に_が付きます。
+每一個協定類別的 __init__ 參數基本上跟 RFC 所提到的名稱是一致的。
+同樣的每一個協定實體命名也相同。
+但是，當 __init__ 名稱與 Python 內定的關鍵字衝突時，會在名稱的尾端加上底線「_」。
 
-いくつかの__init__引数にはデフォルト値が設定されており省略できます。
-以下の例ではversion=4等が省略されています。
+有些 __init__ 的參數由於有內定的預設值，因此可以忽略。
+下面的例子中，原本需要被加入的參數 version=4 或其他值就可以被忽略。
 
 .. rst-class:: sourcecode
 
@@ -72,31 +66,29 @@ __init__引数名には、type_のように最後に_が付きます。
         print pkt_ipv4.src
         print pkt_ipv4.proto
 
-ネットワークアドレス
-^^^^^^^^^^^^^^^^^^^^
-
-RyuパケットライブラリのAPIでは、基本的に文字列表現のネットワークアドレスが
-使用されます。例えば以下のようなものです。
-
-============= ===================
-アドレス種別  python文字列の例
-============= ===================
-MACアドレス   '00:03:47:8c:a1:b3'
-IPv4アドレス  '192.0.2.1'
-IPv6アドレス  '2001:db8::2'
-============= ===================
-
-パケットの解析 (パース)
+網路位址(network address)
 ^^^^^^^^^^^^^^^^^^^^^^^^
+Ryu封包函式庫的API，使用最基本的文字作為表現。
+舉例如下
 
-パケットのバイト列から、対応するpythonオブジェクトを生成します。
+============= ===================
+位址種類        python 文字表示
+============= ===================
+MAC 位址       '00:03:47:8c:a1:b3'
+IPv4 位址      '192.0.2.1'
+IPv6 位址      '2001:db8::2'
+============= ===================
 
-具体的には以下のようになります。
+封包的解析 (Parse)
+^^^^^^^^^^^^^^^^
 
-1. ryu.lib.packet.packet.Packetクラスのオブジェクトを生成
-   (data引数に解析するバイト列を指定)
-2. 1.のオブジェクトのget_protocolメソッド等を使用して、
-   各プロトコルヘッダに対応するオブジェクトを取得
+封包的 Byte String 可以產生相對應的 Python 物件。
+
+具體的事例如下
+
+1. ryu.lib.packet.packet.Packet 類別的物件產生
+   (指定要解析的 byte string 給 data 作為參數)
+2. 使用先前產生的物件中 get_protocol 方法，取得協定中相關屬性的物件。
 
 .. rst-class:: sourcecode
 
@@ -111,21 +103,20 @@ IPv6アドレス  '2001:db8::2'
         print pkt_ethernet.src
         print pkt_ethernet.ethertype
 
-パケットの生成 (シリアライズ)
+封包的產生(序列化，Serialize)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-pythonオブジェクトから、対応するパケットのバイト列を生成します。
+把 Python 物件轉換成為相對定封包的 byte string。
 
-具体的には以下のようになります。
+具體說明如下
 
-1. ryu.lib.packet.packet.Packetクラスのオブジェクトを生成
-2. 各プロトコルヘッダに対応するオブジェクトを生成  (ethernet, ipv4, ...)
-3. 1.のオブジェクトのadd_protocolメソッドを使用して2.のヘッダを順番に追加
-4. 1.のオブジェクトのserializeメソッドを呼び出してバイト列を生成
+1. ryu.lib.packet.packet.Packet 類別的物件產生
+2. 產生相對應的協定物件  (ethernet, ipv4, ...)
+3. 1.所產生的物件中，使用add_protocol方法將 2. 所產生的物件依序加入
+4. 呼叫 1. 所產生的物件中的 serialize 方法將物件轉換成 byte string
 
-チェックサムやペイロード長などのいくつかのフィールドは、
-明示的に値を指定しなくてもserialize時に自動的に計算されます。
-詳細は各クラスのリファレンスをご参照ください。
+Checksum 和 payload 的長度不需要特別設定，在序列化的同時會被自動計算出來。
+詳細的各類別細節請參考相關資訊。
 
 .. rst-class:: sourcecode
 
@@ -145,7 +136,7 @@ pythonオブジェクトから、対応するパケットのバイト列を生�
         pkt.serialize()
         bin_packet = pkt.data
 
-Scapyライクな代替APIも用意されていますので、お好みに応じてご使用ください。
+另外也提供 API 類似 Scapy，請根據個人喜好選擇。
 
 .. rst-class:: sourcecode
 
@@ -156,30 +147,25 @@ Scapyライクな代替APIも用意されていますので、お好みに応じ
         u = udp.udp(...)
         pkt = e/i/u
 
-アプリケーション例
+Application 範例
 ------------------
 
-上記の例を使用して作成した、pingに返事をするアプリケーションを示します。
+接下來的例子是使用上述的方法，達成一個可以針對 ping 做出回應的應用程式。
 
-ARP REQUESTとICMP ECHO REQUESTをPacket-Inで受けとり、
-返事をPacket-Outで送信します。
-IPアドレス等は__init__メソッド内にハードコードされています。
+接受 Packet-In 所收到的 ARP REQUEST 和 ICMP ECHO REQUEST後藉由 Packet-Out 發送回應。
+IP 位址等 __init__ 的參數都是使用固定程式碼(hard-code)的方式。
 
 .. rst-class:: sourcecode
 
 .. literalinclude:: sources/ping_responder.py
 
-
 .. NOTE::
-    OpenFlow 1.2以降では、Packet-Inメッセージのmatchフィールドから、
-    パース済みのパケットヘッダーの内容を取得できる場合があります。
-    ただし、このフィールドにどれだけの情報を入れてくれるかは、スイッチの
-    実装によります。
-    例えばOpen vSwitchは最低限の情報しか入れてくれませんので、
-    多くの場合コントローラー側でパケット内容を解析する必要があります。
-    一方LINCは可能な限り多くの情報を入れてくれます。
+    OpenFlow 1.2版本以後，因為 match 而帶來的 Packet-In 訊息中，將會帶有已經被解析過的資訊。
+    但是這些資訊的多寡以及詳細程度要看每一台交換器的實際處理決定。
+    例如，Open vSwitch 僅放入最底需求的資訊，大多數的情況下 controller 需要針對資料再進行處理。
+    反之，LINC則盡可能放入相關資訊。
 
-以下はping -c 3を実行した場合のログの例です。
+以下是使用 “ping -c 3”時所產生的記錄擋(log)。
 
 .. rst-class:: console
 
@@ -201,8 +187,6 @@ IPアドレス等は__init__メソッド内にハードコードされていま�
     packet-in ethernet(dst='0a:e4:1c:d1:3e:44',ethertype=2048,src='0a:e4:1c:d1:3e:43'), ipv4(csum=47379,dst='192.0.2.9',flags=0,header_length=5,identification=32296,offset=0,option=None,proto=1,src='192.0.2.99',tos=0,total_length=84,ttl=255,version=4), icmp(code=0,csum=26863,data=echo(data='U,B\x00\x00\x00\x00\x00!\xa26(\x00\x00\x00\x00\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f !"#$%&\'()*+,-./\x00\x00\x00\x00\x00\x00\x00\x00',id=44565,seq=2),type=8)
     packet-out ethernet(dst='0a:e4:1c:d1:3e:43',ethertype=2048,src='0a:e4:1c:d1:3e:44'), ipv4(csum=14140,dst='192.0.2.99',flags=0,header_length=5,identification=0,offset=0,option=None,proto=1,src='192.0.2.9',tos=0,total_length=84,ttl=255,version=4), icmp(code=0,csum=28911,data=echo(data='U,B\x00\x00\x00\x00\x00!\xa26(\x00\x00\x00\x00\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f !"#$%&\'()*+,-./\x00\x00\x00\x00\x00\x00\x00\x00',id=44565,seq=2),type=0)
 
-IPフラグメント対応は読者への宿題とします。
-OpenFlowプロトコル自体にはMTUを取得する方法がありませんので、
-ハードコードするか、何らかの工夫が必要です。
-また、Ryuパケットライブラリは常にパケット全体をパース/シリアライズ
-しますので、フラグメント化されたパケットを処理するためのAPI変更が必要です。
+IP fragments 將會是使用者需要解決的課題。
+由於 OpenFlow 協定本身並沒有提供得到 MTU 資訊的方法，目前僅能使用其他方法解決，例如固定程式碼(hard-code)。
+另外，因為 Ryu 封包函式庫會對全部的封包進行解析或序列化，你將會需要使用API來處理封包斷裂(fragmented)的問題。
