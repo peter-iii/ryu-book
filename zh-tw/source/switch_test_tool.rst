@@ -21,7 +21,7 @@ OpenFlowスイッチのOpenFlow仕様への対応状況を検証するテスト�
 ============================== ================================
 測試訊息種類                     相對應參數
 ============================== ================================
-OpenFlow1.3 FlowMod 訊息        match (IN_PHY_PORT 除外)
+OpenFlow1.3 FlowMod 訊息       match (IN_PHY_PORT 除外)
 
                                actions (SET_QUEUE 除外)
 
@@ -106,37 +106,33 @@ OpenFlow1.3 GroupMod 訊息       全部
 測試範本檔案
 ^^^^^^^^^^^
 
+你需要遵照測試範本的相關規範來建立一個測試範本以滿足你想要完成的測試項目。
 
-試験したいテストパターンに応じたテストパターンファイルを作成する必要が
-あります。
-
-テストパターンファイルは拡張子を「.json」としたテキストファイルです。
-以下の形式で記述します。
-
+測試範本的附檔名是「.json」，他的格式如下。
 
 .. rst-class:: sourcecode
 
 ::
 
     [
-        "xxxxxxxxxx",                    # 試験項目名
+        "xxxxxxxxxx",                    # 測試名稱
         {
-            "description": "xxxxxxxxxx", # 試験内容の説明
+            "description": "xxxxxxxxxx", # 測試內容的描述
             "prerequisite": [
                 {
-                    "OFPFlowMod": {...}  # 登録するフローエントリ、メーターエントリ、グループエントリ
-                },                       # (RyuのOFPFlowMod、OFPMeterMod、OFPGroupModをjson形式で記述)
+                    "OFPFlowMod": {...}  # 要登錄的 flow entry，meter entry，group entry
+                },                       # (Ryu 的 OFPFlowMod、OFPMeterMod、OFPGroupMod 使用 json 的形態描述)
                 {                        #
-                    "OFPMeterMod": {...} # フローエントリで期待する処理結果が
-                },                       # パケット転送(actions=output)の場合は
-                {                        # 出力ポート番号に「2」を指定してください
-                    "OFPGroupMod": {...} # グループエントリでパケット転送を行う場合は
-                },                       # 出力ポート番号には「2」もしくは「3」を
-                {...}                    # 指定してください
+                    "OFPMeterMod": {...} # flow entry 預期處理結果
+                },                       # 封包轉送的情況(actions=output)
+                {                        # 轉送輸出封包的編號請指定為「2」
+                    "OFPGroupMod": {...} # 封包轉送至 group entry 的情況
+                },                       # 請指定埠號為「2」或「3」
+                {...}                    # 
             ],
             "tests": [
                 {
-                    # 印加パケット
+                    # 修改封包
                     # 1回だけ印加するのか一定時間連続して印加し続けるのかに応じて
                     # (A)(B)のいずれかを記述
                     #  (A) 1回だけ印加
@@ -158,7 +154,7 @@ OpenFlow1.3 GroupMod 訊息       全部
                         }
                     },
 
-                    # 期待する処理結果
+                    # 預期處理的結果
                     # 処理結果の種別に応じて(a)(b)(c)(d)のいずれかを記述
                     #  (a) パケット転送(actions=output:X)の確認試験
                     "egress": [          # 期待する転送パケット
@@ -205,18 +201,15 @@ OpenFlow1.3 GroupMod 訊息       全部
 
 .. NOTE::
 
-    Ryuのソースツリーにはサンプルテストパターンとして、OpenFlow1.3 FlowMod
-    メッセージのmatch／actionsに指定できる各パラメータ、ならびにMeterMod
-    メッセージの各パラメータがそれぞれ正常に動作するかを確認する
-    テストパターンファイルが用意されています。
+    作為一個測試樣板範本，Ryu 的原始碼提供了樣板檔案來檢查測試是否符合 OpenFlow1.3 FlowMod 中 match/action 訊息的參數適不適合。
 
         ryu/tests/switch/of13
 
 
-ツール実行環境
+測試工具執行環境
 ^^^^^^^^^^^^^^
 
-テストツール実行のための環境は次のとおりです。
+接下來說明測試工具執行時所需的環境
 
 
 .. only:: latex
@@ -235,44 +228,40 @@ OpenFlow1.3 GroupMod 訊息       全部
         :scale: 60 %
         :align: center
 
+做為輔助交換器來說，下列的條件是一個 OpenFlow 交換器必須要支援的。
 
-補助スイッチとして、以下の動作を正常に行うことが出来るOpenFlowスイッチが必要です。
+* actions=CONTROLLER flow entry 註冊
 
-* actions=CONTROLLERのフローエントリ登録
+* 流量監控用的 flow entry 註冊
 
-* スループット計測用のフローエントリ登録
+* 透過 flow entry 發送 Packet-In 訊息到 controller，actions=CONTROLLER 。
 
-* actions=CONTROLLERのフローエントリによるPacket-Inメッセージ送信
-
-* Packet-Outメッセージ受信によるパケット送信
+* 接受 Packet-Out 訊息並發送封包
 
 
 .. NOTE::
 
-    Open vSwitchを試験対象スイッチとしたツール実行環境をmininet上で実現する
-    環境構築スクリプトが、Ryuのソースツリーに用意されています。
+    Ryu 原始碼當中利用腳本實作了一個在 mininet 上的測試環境，當中的待測交換器是 Open vSwtich。
 
         ryu/tests/switch/run_mininet.py
 
-    スクリプトの使用例を「 `テストツール使用例`_ 」に記載しています。
+    腳本的使用範例請參照「 `テストツール使用例`_ 」。
 
 
-
-テストツールの実行方法
+測試工具的執行方法
 ^^^^^^^^^^^^^^^^^^^^^^
 
-テストツールはRyuのソースツリー上で公開されています。
+測試工具被公開在 Ryu 的原始碼當中。
 
     =============================== ===============================
-    ソースコード                    説明
+    原始碼                           説明
     =============================== ===============================
-    ryu/tests/switch/tester.py      テストツール
-    ryu/tests/switch/of13           テストパターンファイルのサンプル
-    ryu/tests/switch/run_mininet.py 試験環境構築スクリプト
+    ryu/tests/switch/tester.py      測試工具
+    ryu/tests/switch/of13           測試樣版的一些範例
+    ryu/tests/switch/run_mininet.py 建立測試環境的腳本
     =============================== ===============================
 
-
-テストツールは次のコマンドで実行します。
+使用接下來的指令執行測試工具。
 
 .. rst-class:: console
 
@@ -285,49 +274,38 @@ OpenFlow1.3 GroupMod 訊息       全部
 
 
     ==================== ======================================== =====================
-    オプション           説明                                     デフォルト値
+    選項                  説明                                     預設值
     ==================== ======================================== =====================
-    --test-switch-target 試験対象スイッチのデータパスID           0000000000000001
-    --test-switch-tester 補助スイッチのデータパスID               0000000000000002
-    --test-switch-dir    テストパターンファイルのディレクトリパス ryu/tests/switch/of13
+    --test-switch-target 測試目的交換器的 datapath ID               0000000000000001
+    --test-switch-tester 測試輔助交換器的 datapath ID               0000000000000002
+    --test-switch-dir    測試樣板的存放路徑                          ryu/tests/switch/of13
     ==================== ======================================== =====================
 
 
 .. NOTE::
 
-    テストツールはRyuアプリケーションとしてryu.base.app_manager.RyuAppを
-    継承して作成されているため、他のRyuアプリケーションと同様に--verbose
-    オプションによるデバッグ情報出力等にも対応しています。
+    測試工具是繼承自 ryu.base.app_manager.RyuApp 的一個應用程式。跟其他的 Ryu 應用程式一樣使用
+    --verbose 選項顯示除錯的訊息。
 
 
-
-テストツールの起動後、試験対象スイッチと補助スイッチがコントローラに
-接続されると、指定したテストパターンファイルを元に試験が開始されます。
+測試工具啟動之後，測試目的交換器和測試輔助交換器和 controller 進行連接，接著測試就會使用指定的測試樣板開始進行測試。
 
 測試工具使用範例
 ------------------
 
-サンプルテストパターンやオリジナルのテストパターンファイルを用いた
-テストツールの実行手順を紹介します。
+下面介紹如何使用和測試樣板範例檔和原始測試樣板檔案的順序。
 
 
-サンプルテストパターンの実行手順
+執行測試樣本檔案的順序
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Ryuのソースツリーのサンプルテストパターン(ryu/tests/switch/of13)を用いて、
-FlowModメッセージのmatch／actionsの一通りの動作確認、MeterModメッセージの
-動作確認、ならびにGroupModメッセージの動作確認を行う手順を示します。
+使用 Ryu 的原始碼中測試樣板範本 (ryu/tests/switch/of13) 來檢查 FlowMod訊息的 match/action，MeterMod的訊息和 GroupMod訊息
 
-本手順では、試験環境を試験環境構築スクリプト(ryu/tests/switch/run_mininet.py)
-を用いて構築することとします。このため試験対象スイッチはOpen vSwitchとなります。
-VMイメージ利用のための環境設定やログイン方法等は「 :ref:`ch_switching_hub` 」
-を参照してください。
+本程序中測試環境和測試環境的產生腳本(ryu/tests/switch/run_mininet.py)，也因此測試目標是 Open vSwitch。使用 VM image 來打造測試環境以及登入的方法請參照「 :ref:`ch_switching_hub` 」以取得更詳細的資料。
 
+1. 建構測試環境
 
-
-1. 試験環境の構築
-
-    VM環境にログインし、試験環境構築スクリプトを実行します。
+    VM環境的登入，執行測試環境的建構腳本。
 
     .. rst-class:: console
 
@@ -336,7 +314,7 @@ VMイメージ利用のための環境設定やログイン方法等は「 :ref:
         ryu@ryu-vm:~$ sudo ryu/ryu/tests/switch/run_mininet.py
 
 
-    netコマンドの実行結果は次の通りです。
+    net 命令的執行結果如下。
 
     .. rst-class:: console
 
@@ -349,9 +327,9 @@ VMイメージ利用のための環境設定やログイン方法等は「 :ref:
 
 
 
-2. テストツール実行
+2. 測試工具的執行
 
-    テストツール実行のため、コントローラのxtermを開きます。
+    為了執行測試工具，打開連線到 controller 的 xterm。
 
     .. rst-class:: console
 
@@ -360,12 +338,10 @@ VMイメージ利用のための環境設定やログイン方法等は「 :ref:
         mininet> xterm c0
 
 
-    「Node: c0 (root)」のxtermから、テストツールを実行します。
-    この際、テストパターンファイルのディレクトリとして、
-    サンプルテストパターンのディレクトリ(ryu/tests/switch/of13)を指定します。
-    なお、mininet環境の試験対象スイッチと補助スイッチのデータパスIDはそれぞれ
-    --test-switch-target／--test-switch-testerオプションのデフォルト値と
-    なっているため、オプション指定を省略しています。
+    在「Node: c0 (root)」的 xterm 中啟動測試工具。
+    這時候，做為測試樣本檔案的位置，請指定測試樣本範例路徑(ryu/tests/switch/of13)。
+    接著，由於 mininet 測試環境中測試目標交換器和測試輔助交換器的 datapath ID 均有預設值，因此
+    --test-switch-target／--test-switch-tester 選項可省略。
 
     Node: c0:
 
@@ -376,9 +352,7 @@ VMイメージ利用のための環境設定やログイン方法等は「 :ref:
         root@ryu-vm:~$ ryu-manager --test-switch-dir ryu/ryu/tests/switch/of13 ryu/ryu/tests/switch/tester.py
 
 
-    ツールを実行すると次のように表示され、試験対象スイッチと補助スイッチが
-    コントローラに接続されるまで待機します。
-
+    測試工具執行之後就會出現下列訊息，並等待測試目標交換器和測試輔助交換器連結到 controller。
 
     .. rst-class:: console
 
