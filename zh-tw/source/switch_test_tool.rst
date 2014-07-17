@@ -1,44 +1,41 @@
 .. _ch_switch_test_tool:
 
-OpenFlow 測試工具
+OpenFlow 交換器測試工具
 =================
 
-本章將說明如何驗證 OpenFlow 交換器支援的完整度，及測試工具的使用方法。
+本章將說明如何檢驗 OpenFlow 交換器對於 OpenFlow 規範的功能支援完整度及測試工具的使用方法。
 
 測試工具概要
-------------------
+------------
 
-本工具 flow entry 
-本ツールは、テストパターンファイルに従って試験対象のOpenFlowスイッチに
-対してフローエントリやメーターエントリの登録／パケット印加を実施し、
-OpenFlowスイッチのパケット書き換えや転送(または破棄)の処理結果と、
-テストパターンファイルに記述された「期待する処理結果」の比較を行うことにより、
-OpenFlowスイッチのOpenFlow仕様への対応状況を検証するテストツールです。
+本工具使用測試樣本檔案對待測的 OpenFlow 交換器，進行 flow entry 和 meter entry 的新增，
+用以處理封包，並且將 OpenFlow 交換器所處理及轉送封包的結果與測試樣本檔案所描述的”預期處理結果”做比對。
+亦即檢驗 OpenFlow 交換器對於 OpenFlow 功能的支援狀態。
 
-測試工具中，已經支援 OpenFlow 1.3 版本的 FlowMod 訊息，MeterMod 訊息和 GroupMod 訊息的測試。
+在測試工具中，已經有包含 OpenFlow 1.3 版本中的 FlowMod 訊息，MeterMod 訊息和 GroupMod 訊息的測試動作。
 
+=========================    ================================
+測試訊息種類                    相對應的參數
+=========================    ================================
+OpenFlow1.3 FlowMod 訊息      match (IN_PHY_PORT 除外)
 
-============================== ================================
-測試訊息種類                     相對應參數
-============================== ================================
-OpenFlow1.3 FlowMod 訊息       match (IN_PHY_PORT 除外)
+                              actions (SET_QUEUE 除外)
+OpenFlow1.3 MeterMod 訊息      全部
+OpenFlow1.3 GroupMod 訊息      全部
+=========================    ================================
 
-                               actions (SET_QUEUE 除外)
-
-OpenFlow1.3 MeterMod 訊息       全部
-OpenFlow1.3 GroupMod 訊息       全部
-============================== ================================
-
-若要對更詳細的資料關於封包的產生以及修改封包，請參考「 :ref:`ch_packet_lib` 」。
-
+若要了解關於封包產生及封包修改的詳細資料，請參考「 :ref:`ch_packet_lib` 」。
 
 操作綱要
-^^^^^^^^
+^^^^^^^^^^^^^^^^
 
-驗證執行的環境圖
-""""""""""""
+測試驗證環境示意圖
+""""""""""""""""""
 
-測試工具實際執行時如下示意圖。測試範本檔案中包含了 “待加入的 flow entry和 meta entry“、”檢驗封包”和”預期處理結果”。為了執行測試執行所需的環境設定將在後面的 `ツール実行環境`_ 中描述。
+測試工具實際執行時如下列示意圖。
+測試範本檔案中包含了 “待加入的 flow entry 和 meta entry“、”檢驗封包” 和 ”預期處理結果”。
+為了執行測試執行所需的環境設定將在後面的 `測試執行環境`_ 章節中描述。
+
 
 .. only:: latex
 
@@ -56,12 +53,13 @@ OpenFlow1.3 GroupMod 訊息       全部
         :scale: 60 %
         :align: center
 
-
-
 輸出測試結果
-""""""""""
+""""""""""""""""""""""""
 
-指定測試範例檔案中的測試案例依序執行之後會顯示最終的結果(OK/ERROR)。在出現 ERROR 的測試項結果時，錯誤訊息會一併出現在畫面上，最後的測試結果會指出OK/ERROR的數量並將錯誤的內容輸出。
+在指定了測試樣本檔案後，樣本中的測試案例會被依序執行，最後並顯示結果（OK/ERROR）。
+在出現 ERROR 的測試結果時，錯誤訊息會同時一併出現在畫面上。
+最後的測試結果會顯示 OK/ERROR 的數量及錯誤內容。
+
 
 .. rst-class:: console
 
@@ -97,18 +95,18 @@ OpenFlow1.3 GroupMod 訊息       全部
 
     OK(6) / ERROR(4)
 
-
 使用方法
 --------
 
 下面說明如何使用測試工具。
 
 測試範本檔案
-^^^^^^^^^^^
+^^^^^^^^^^^^
 
-你需要遵照測試範本的相關規範來建立一個測試範本以滿足你想要完成的測試項目。
+你需要依照測試樣本的相關規則來建立一個測試樣本以完成你想要要的測試項目。
 
-測試範本的附檔名是「.json」，他的格式如下。
+測試樣本的附檔名是「.json」，格式如下。
+
 
 .. rst-class:: sourcecode
 
@@ -120,66 +118,66 @@ OpenFlow1.3 GroupMod 訊息       全部
             "description": "xxxxxxxxxx", # 測試內容的描述
             "prerequisite": [
                 {
-                    "OFPFlowMod": {...}  # 要登錄的 flow entry，meter entry，group entry
+                    "OFPFlowMod": {...}  # 所要新增的 flow entry、meter entry、group entry
                 },                       # (Ryu 的 OFPFlowMod、OFPMeterMod、OFPGroupMod 使用 json 的形態描述)
                 {                        #
-                    "OFPMeterMod": {...} # flow entry 預期處理結果
-                },                       # 封包轉送的情況(actions=output)
-                {                        # 轉送輸出封包的編號請指定為「2」
-                    "OFPGroupMod": {...} # 封包轉送至 group entry 的情況
-                },                       # 請指定埠號為「2」或「3」
+                    "OFPMeterMod": {...} # 要將 flow entry 處理的結果轉送出去的情況下
+                },                       # (actions=output)
+                {                        # 請指定輸出埠的編號為「2」
+                    "OFPGroupMod": {...} # 若是封包轉送至 group entry 的情況
+                },                       # 請指定輸出埠號為「2」或「3」
                 {...}                    # 
             ],
             "tests": [
                 {
-                    # 修改封包
-                    # 1回だけ印加するのか一定時間連続して印加し続けるのかに応じて
-                    # (A)(B)のいずれかを記述
-                    #  (A) 1回だけ印加
+                    # 產生封包
+                    # 單次產生封包或者一定時間內連續產生封包均可。
+                    # 封包的產生方法有 (A) (B) 兩種
+                    #  (A) 單次產生封包
                     "ingress": [
-                        "ethernet(...)", # (Ryuパケットライブラリのコンストラクタの形式で記述)
+                        "ethernet(...)", # (在 Ryu 封包函式庫的建構子(Constructor)中描述)
                         "ipv4(...)",
                         "tcp(...)"
                     ],
-                    #  (B) 一定時間連続して印加
+                    #  (B) 一段時間內連續產生封包
                     "ingress": {
                         "packets":{
                             "data":[
-                                "ethernet(...)", # (A)と同じ
+                                "ethernet(...)", # 與 (A) 相同
                                 "ipv4(...)",
                                 "tcp(...)"
                             ],
-                            "pktps": 1000,       # 毎秒印加するパケット数を指定
-                            "duration_time": 30  # 連続印加時間を秒単位で指定
+                            "pktps": 1000,       # 每秒產生封包的數量 (packet per second)
+                            "duration_time": 30  # 連續產生封包的時間長度，以秒為單位。
                         }
                     },
 
                     # 預期處理的結果
-                    # 処理結果の種別に応じて(a)(b)(c)(d)のいずれかを記述
-                    #  (a) パケット転送(actions=output:X)の確認試験
-                    "egress": [          # 期待する転送パケット
+                    # 處理的結果有(a)(b)(c)(d)這幾種
+                    #  (a) 封包轉送(actions=output:X)
+                    "egress": [          # 預期轉送封包
                         "ethernet(...)",
                         "ipv4(...)",
                         "tcp(...)"
                     ]
-                    #  (b) パケットイン(actions=CONTROLLER)の確認試験
-                    "PACKET_IN": [       # 期待するPacket-Inデータ
+                    #  (b) Packet in (actions=CONTROLLER)
+                    "PACKET_IN": [       # 預期出現的 Packet in 封包
                         "ethernet(...)",
                         "ipv4(...)",
                         "tcp(...)"
                     ]
-                    #  (c) table-missの確認試験
-                    "table-miss": [      # table-missとなることを期待するフローテーブルID
+                    #  (c) table-miss
+                    "table-miss": [      # 期望 table-miss 發生時的 table ID
                         0
                     ]
-                    #  (d) パケット転送(actions=output:X)時スループットの確認試験
+                    #  (d) 封包轉送(actions=output:X)時的流量(Throughput)測試
                     "egress":[
                         "throughput":[
                             {
-                                "OFPMatch":{   # スループット計測用に
-                                  ...          # 補助SWに登録される
-                                },             # フローエントリのMatch条件
-                                "kbps":1000    # 期待するスループットをKbps単位で指定
+                                "OFPMatch":{   # 為了 Throughput 測試
+                                  ...          # 新增在輔助交換器中
+                                },             # flow entry 的 match 條件
+                                "kbps":1000    # 指定期望的流量以 Kbps 為單位
                             },
                             {...},
                             {...}
@@ -189,25 +187,23 @@ OpenFlow1.3 GroupMod 訊息       全部
                 {...},
                 {...}
             ]
-        },                               # 試験1
-        {...},                           # 試験2
-        {...}                            # 試験3
+        },                               # 測試項目1
+        {...},                           # 測試項目2
+        {...}                            # 測試項目3
     ]
 
-印加パケットとして「(B) 一定時間連続して印加」を、
-期待する処理結果として「(d) パケット転送(actions=output:X)時スループットの確認試験」を
-それぞれ記述することにより、試験対象SWのスループットを計測することができます。
+例如，產生封包中「(B) 一段時間內產生封包」和預期處理結果中「(d) 封包轉送 (actions=output:X) 時流量測試」搭配時就可以用來對待測交換器進行流量 (Throughput) 的測試。
 
 
 .. NOTE::
 
-    作為一個測試樣板範本，Ryu 的原始碼提供了樣板檔案來檢查測試是否符合 OpenFlow1.3 FlowMod 中 match/action 訊息的參數適不適合。
+    作為一個測試樣本在 Ryu 的原始碼中，提供了一些範本檔案來檢查測試參數是否符合 OpenFlow1.3 FlowMod 中的 match/action 訊息。
 
         ryu/tests/switch/of13
 
 
-測試工具執行環境
-^^^^^^^^^^^^^^
+測試執行環境
+^^^^^^^^^^^^^^^^^^^^^^
 
 接下來說明測試工具執行時所需的環境
 
@@ -228,30 +224,30 @@ OpenFlow1.3 GroupMod 訊息       全部
         :scale: 60 %
         :align: center
 
-做為輔助交換器來說，下列的條件是一個 OpenFlow 交換器必須要支援的。
+對於做為一個輔助交換器來說，下面的條件是一個 OpenFlow 交換器必須要支援的。
 
-* actions=CONTROLLER flow entry 註冊
+* actions=CONTROLLER flow entry 新增
 
-* 流量監控用的 flow entry 註冊
+* 流量監控用的 flow entry 新增
 
-* 透過 flow entry 發送 Packet-In 訊息到 controller，actions=CONTROLLER 。
+* 透過 flow entry 發送 Packet-In 訊息到 controller ( actions=CONTROLLER ) 。
 
 * 接受 Packet-Out 訊息並發送封包
 
 
 .. NOTE::
 
-    Ryu 原始碼當中利用腳本實作了一個在 mininet 上的測試環境，當中的待測交換器是 Open vSwtich。
+    Ryu 原始碼當中利用腳本實作了一個在 mininet 上的測試環境，在此當中是採用 Open vSwtich 當作待測交換器。
 
         ryu/tests/switch/run_mininet.py
 
-    腳本的使用範例請參照「 `テストツール使用例`_ 」。
+    腳本的使用範例請參照「 `測試工具使用範例`_ 」。
 
 
 測試工具的執行方法
-^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-測試工具被公開在 Ryu 的原始碼當中。
+測試工具已經被公開在 Ryu 的原始碼當中。
 
     =============================== ===============================
     原始碼                           説明
@@ -261,7 +257,8 @@ OpenFlow1.3 GroupMod 訊息       全部
     ryu/tests/switch/run_mininet.py 建立測試環境的腳本
     =============================== ===============================
 
-使用接下來的指令執行測試工具。
+使用下面的指令來執行測試工具。
+
 
 .. rst-class:: console
 
@@ -269,16 +266,14 @@ OpenFlow1.3 GroupMod 訊息       全部
 
     $ ryu-manager [--test-switch-target DPID] [--test-switch-tester DPID]
      [--test-switch-dir DIRECTORY] ryu/tests/switch/tester.py
-
 ..
-
 
     ==================== ======================================== =====================
     選項                  説明                                     預設值
     ==================== ======================================== =====================
-    --test-switch-target 測試目的交換器的 datapath ID               0000000000000001
-    --test-switch-tester 測試輔助交換器的 datapath ID               0000000000000002
-    --test-switch-dir    測試樣板的存放路徑                          ryu/tests/switch/of13
+    --test-switch-target 待測交換器的 datapath ID                   0000000000000001
+    --test-switch-tester 輔助交換器的 datapath ID                   0000000000000002
+    --test-switch-dir    測試樣本的存放路徑                          ryu/tests/switch/of13
     ==================== ======================================== =====================
 
 
@@ -288,16 +283,15 @@ OpenFlow1.3 GroupMod 訊息       全部
     --verbose 選項顯示除錯的訊息。
 
 
-測試工具啟動之後，測試目的交換器和測試輔助交換器和 controller 進行連接，接著測試就會使用指定的測試樣板開始進行測試。
+測試工具啟動之後，待測交換器和輔助交換器會跟 controller 進行連接，接著測試動作就會使用指定的測試樣本開始進行測試。
 
 測試工具使用範例
 ------------------
 
-下面介紹如何使用和測試樣板範例檔和原始測試樣板檔案的順序。
+下面介紹如何使用和測試樣本檔案和原始測試樣板檔案的步驟。
 
-
-執行測試樣本檔案的順序
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+執行測試樣本檔案的步驟
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 使用 Ryu 的原始碼中測試樣板範本 (ryu/tests/switch/of13) 來檢查 FlowMod訊息的 match/action，MeterMod的訊息和 GroupMod訊息
 
@@ -370,11 +364,7 @@ OpenFlow1.3 GroupMod 訊息       全部
         waiting for switches connection...
 
 
-
-
-    試験対象スイッチと補助スイッチがコントローラに接続されると、
-    試験が開始されます。
-
+    待測交換器和輔助交換器連接上 contreoller ，測試開始。
 
     .. rst-class:: console
 
@@ -404,14 +394,15 @@ OpenFlow1.3 GroupMod 訊息       全部
         ...
 
 
-    ryu/tests/switch/of13配下の全てのサンプルテストパターンファイルの試験
-    が完了すると、テストツールは終了します。
+    ryu/tests/switch/of13 資料夾以下的測試樣本全部執行完畢，測試也隨之結束。
 
 
-<参考>
-""""""
+<參考資料>
+""""""""""
 
-    サンプルテストパターンファイル一覧
+    測試樣本範本檔案一覽
+
+        match／actions 各種設定 flow entry 新增，
 
         match／actionsの各設定項目に対応するフローエントリを登録し、
         フローエントリにmatchする(またはmatchしない)複数パターンのパケット
@@ -492,38 +483,43 @@ OpenFlow1.3 GroupMod 訊息       全部
         01_DROP_01_PKTPS_02_10000.json  02_DSCP_REMARK_01_PKTPS_02_10000.json
 
 
-オリジナルテストパターンの実行手順
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+原始測試樣本的執行步驟
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-次に、オリジナルのテストパターンを作成してテストツールを実行する手順を示します。
+接著，原始的測試樣本製作並執行測試工具的步驟如下所示。
 
-例として、OpenFlowスイッチがルータ機能を実現するために必要なmatch／actionsを
-処理する機能を備えているかを確認するテストパターンを作成します。
+例如，OpenFlow 交換器若要實作路由器的功能， match／actions 的處理功能是必須的，因此我們製作測試樣本來確認他。
 
 
-1．テストパターンファイル作成
+1．製作測試樣本檔案
 
-    ルータがルーティングテーブルに従ってパケットを転送する機能を実現する
-    以下のフローエントリが正しく動作するかを試験します。
+    透過路由器的路由表(Routing table)實作封包的轉送功能。
+    下面的 flow entry 會確認整個動作是否正確。
+..
 
 
     =================================== ==================================================
     match                               actions
     =================================== ==================================================
-    宛先IPアドレス帯「192.168.30.0/24」 送信元MACアドレスを「aa:aa:aa:aa:aa:aa」に書き換え
-
-                                        宛先MACアドレスを「bb:bb:bb:bb:bb:bb」に書き換え
-
-                                        TTL減算
-
-                                        パケット転送
+     IP 網域「192.168.30.0/24」         | 修改發送端 MAC 位址為 「aa:aa:aa:aa:aa:aa」
+                                        | 修改目的端 MAC 位址為 「bb:bb:bb:bb:bb:bb」
+                                        | 降低 TTL 值
+                                        | 封包轉送
     =================================== ==================================================
 
 
-    このテストパターンを実行するテストパターンファイルを作成します。
+    =============================== ===============================
+    match                           actions
+    =============================== ===============================
+    IP 網域「192.168.30.0/24」        修改發送端 MAC 位址為 「aa:aa:aa:aa:aa:aa」
+    ryu/tests/switch/of13           測試樣版的一些範例
+    ryu/tests/switch/run_mininet.py 建立測試環境的腳本
+    =============================== ===============================
+
+    依照這個測試樣本產生測試樣本檔案。
 
 
-ファイル名： ``sample_test_pattern.json``
+檔案名稱： ``sample_test_pattern.json``
 
 .. rst-class:: sourcecode
 
@@ -618,18 +614,13 @@ OpenFlow1.3 GroupMod 訊息       全部
 
 2．試験環境構築
 
-    試験環境構築スクリプトを用いて試験環境を構築します。手順は
-    `サンプルテストパターンの実行手順`_ を参照してください。
+    使用測試環境建制腳本來完成測試環境。詳細的操作細節請參照 `執行測試樣本檔案的步驟`_ 。
 
+3．測試工具的執行
 
-3．テストツール実行
-
-    コントローラのxtermから、先ほど作成したオリジナルのテストパターンファイル
-    を指定してテストツールを実行します。
-    なお、--test-switch-dirオプションはディレクトリだけでなくファイルを直接
-    指定することも可能です。また、送受信パケットの内容を確認するため
-    --verboseオプションを指定しています。
-
+    使用 conrtroller 的 xterm 視窗，指定先前做好的測試樣板檔案位置並執行測試工具。
+    可以使用 --test-switch-dir 選項來指定樣本檔案的位置。
+    如果想要確認收送風包的內容，可以指定 --verbose 選項。
 
     Node: c0:
 
@@ -640,8 +631,7 @@ OpenFlow1.3 GroupMod 訊息       全部
         root@ryu-vm:~$ ryu-manager --verbose --test-switch-dir ./sample_test_pattern.json ryu/ryu/tests/switch/tester.py
 
 
-    試験対象スイッチと補助スイッチがコントローラに接続されると、試験が
-    開始されます。
+    待測交換器和輔助交換器已經和 conrtroller 連接下，測試即將開始。
 
     「dpid=0000000000000002 : receive_packet...」のログ出力から、テスト
     パターンファイルのegressパケットとして設定した、期待する出力パケット
@@ -676,11 +666,9 @@ OpenFlow1.3 GroupMod 訊息       全部
             static routing table                            OK
         ---  Test end  ---
 
-
-    実際にOpenFlowスイッチに登録されたフローエントリは以下の通りです。
-    テストツールによって印加されたパケットがフローエントリにmatchし、
-    n_packetsがカウントアップされていることが分かります。
-
+    下面列出實際的 OpenFlow 交換器所登錄的 flow entry。
+    你可以看到測試工具所產生的封包 match 所登錄的 flow entry，
+    而且 n_packets 計數器數字被增加。
 
     Node: s1:
 
@@ -693,54 +681,54 @@ OpenFlow1.3 GroupMod 訊息       全部
          cookie=0x0, duration=56.217s, table=0, n_packets=1, n_bytes=73, priority=0,ip,nw_dst=192.168.30.0/24 actions=set_field:aa:aa:aa:aa:aa:aa->eth_src,set_field:bb:bb:bb:bb:bb:bb->eth_dst,dec_ttl,output:2
 
 
-エラーメッセージ一覧
-^^^^^^^^^^^^^^^^^^^^
+錯誤訊息一覽表
+^^^^^^^^^^^^^^^^^^^^^
 
-本ツールで出力されるエラーメッセージの一覧を示します。
+下面列出所有測試工具可能會顯示的錯誤訊息。
 
 .. tabularcolumns:: |p{23zw}|p{23zw}|
 
 ======================================================================== ============================================================================================================
-エラーメッセージ                                                         説明
+錯誤訊息                                                         説明
 ======================================================================== ============================================================================================================
-Failed to initialize flow tables: barrier request timeout.               前回試験の試験対象SW上のフローエントリ削除に失敗(Barrier Requestのタイムアウト)
-Failed to initialize flow tables: [err_msg]                              前回試験の試験対象SW上のフローエントリ削除に失敗(FlowModに対するErrorメッセージ受信)
-Failed to initialize flow tables of tester_sw: barrier request timeout.  前回試験の補助SW上のフローエントリ削除に失敗(Barrier Requestのタイムアウト)
-Failed to initialize flow tables of tester_sw: [err_msg]                 前回試験の補助SW上のフローエントリ削除に失敗(FlowModに対するErrorメッセージ受信)
-Failed to add flows: barrier request timeout.                            試験対象SWに対するフローエントリ登録に失敗(Barrier Requestのタイムアウト)
-Failed to add flows: [err_msg]                                           試験対象SWに対するフローエントリ登録に失敗(FlowModに対するErrorメッセージ受信)
-Failed to add flows to tester_sw: barrier request timeout.               補助SWに対するフローエントリ登録に失敗(Barrier Requestのタイムアウト)
-Failed to add flows to tester_sw: [err_msg]                              補助SWに対するフローエントリ登録に失敗(FlowModに対するErrorメッセージ受信)
-Failed to add meters: barrier request timeout.                           試験対象SWに対するメーターエントリ登録に失敗(Barrier Requestのタイムアウト)
-Failed to add meters: [err_msg]                                          試験対象SWに対するメーターエントリ登録に失敗(MeterModに対するErrorメッセージ受信)
-Failed to add groups: barrier request timeout.                           試験対象SWに対するグループエントリ登録に失敗(Barrier Requestのタイムアウト)
-Failed to add groups: [err_msg]                                          試験対象SWに対するグループエントリ登録に失敗(GroupModに対するErrorメッセージ受信)
-Added incorrect flows: [flows]                                           試験対象SWに対するフローエントリ登録確認エラー(想定外のフローエントリが登録された)
-Failed to add flows: flow stats request timeout.                         試験対象SWに対するフローエントリ登録確認に失敗(FlowStats Requestのタイムアウト)
-Failed to add flows: [err_msg]                                           試験対象SWに対するフローエントリ登録確認に失敗(FlowStats Requestに対するErrorメッセージ受信)
-Added incorrect meters: [meters]                                         試験対象SWに対するメーターエントリ登録確認エラー(想定外のメーターエントリが登録された)
-Failed to add meters: meter config stats request timeout.                試験対象SWに対するメーターエントリ登録確認に失敗(MeterConfigStats Requestのタイムアウト)
-Failed to add meters: [err_msg]                                          試験対象SWに対するメーターエントリ登録確認に失敗(MeterConfigStats Requestに対するErrorメッセージ受信)
-Added incorrect groups: [groups]                                         試験対象SWに対するグループエントリ登録確認エラー(想定外のグループエントリが登録された)
-Failed to add groups: group desc stats request timeout.                  試験対象SWに対するグループエントリ登録確認に失敗(GroupDescStats Requestのタイムアウト)
-Failed to add groups: [err_msg]                                          試験対象SWに対するグループエントリ登録確認に失敗(GroupDescStats Requestに対するErrorメッセージ受信)
-Failed to request port stats from target: request timeout.               試験対象SWのPortStats取得に失敗(PortStats Requestのタイムアウト)
-Failed to request port stats from target: [err_msg]                      試験対象SWのPortStats取得に失敗(PortStats Requestに対するErrorメッセージ受信)
-Failed to request port stats from tester: request timeout.               補助SWのPortStats取得に失敗(PortStats Requestのタイムアウト)
-Failed to request port stats from tester: [err_msg]                      補助SWのPortStats取得に失敗(PortStats Requestに対するErrorメッセージ受信)
-Received incorrect [packet]                                              期待した出力パケットの受信エラー(異なるパケットを受信)
-Receiving timeout: [detail]                                              期待した出力パケットの受信に失敗(タイムアウト)
-Faild to send packet: barrier request timeout.                           パケット印加に失敗(Barrier Requestのタイムアウト)
-Faild to send packet: [err_msg]                                          パケット印加に失敗(Packet-Outに対するErrorメッセージ受信)
-Table-miss error: increment in matched_count.                            table-miss確認エラー(フローにmatchしている)
-Table-miss error: no change in lookup_count.                             table-miss確認エラー(パケットが確認対象のフローテーブルで処理されていない)
-Failed to request table stats: request timeout.                          table-missの確認に失敗(TableStats Requestのタイムアウト)
-Failed to request table stats: [err_msg]                                 table-missの確認に失敗(TableStats Requestに対するErrorメッセージ受信)
-Added incorrect flows to tester_sw: [flows]                              補助SWに対するフローエントリ登録確認エラー(想定外のフローエントリが登録された)
-Failed to add flows to tester_sw: flow stats request timeout.            補助SWに対するフローエントリ登録確認に失敗(FlowStats Requestのタイムアウト)
-Failed to add flows to tester_sw: [err_msg]                              補助SWに対するフローエントリ登録確認に失敗(FlowStats Requestに対するErrorメッセージ受信)
-Failed to request flow stats: request timeout.                           スループット確認時、補助SWに対するフローエントリ登録確認に失敗(FlowStats Requestのタイムアウト)
-Failed to request flow stats: [err_msg]                                  スループット確認時、補助SWに対するフローエントリ登録確認に失敗(FlowStats Requestに対するErrorメッセージ受信)
-Received unexpected throughput: [detail]                                 想定するスループットからかけ離れたスループットを計測
-Disconnected from switch                                                 試験対象SWもしくは補助SWからのリンク断発生
+Failed to initialize flow tables: barrier request timeout.               初始待測交換器的 flow entry 失敗(Barrier Request 作業逾時)
+Failed to initialize flow tables: [err_msg]                              初始待測交換器的 flow entry 失敗(接收到 FlowMod 錯誤訊息)
+Failed to initialize flow tables of tester_sw: barrier request timeout.  初始輔助交換器的 flow entry 失敗(Barrier Request 作業逾時)
+Failed to initialize flow tables of tester_sw: [err_msg]                 初始輔助交換器的 flow entry 失敗(接收到 FlowMod 錯誤訊息)
+Failed to add flows: barrier request timeout.                            待測交換器的 flow entry 新增失敗(Barrier Request 作業逾時)
+Failed to add flows: [err_msg]                                           待測交換器的 flow entry 新增失敗(接收到 FlowMod 錯誤訊息)
+Failed to add flows to tester_sw: barrier request timeout.               輔助交換器的 flow entry 新增失敗(Barrier Request 作業逾時)
+Failed to add flows to tester_sw: [err_msg]                              輔助交換器的 flow entry 新增失敗(接收到 FlowMod 錯誤訊息)
+Failed to add meters: barrier request timeout.                           待測交換器的 meter entry 新增失敗(Barrier Request 作業逾時)
+Failed to add meters: [err_msg]                                          待測交換器的 meter entry 新增失敗(接收到 MeterMod 錯誤訊息)
+Failed to add groups: barrier request timeout.                           待測交換器的 group entry 新增失敗(Barrier Request 作業逾時)
+Failed to add groups: [err_msg]                                          待測交換器的 group entry 新增失敗(接受到 GroupMod 錯誤訊息)
+Added incorrect flows: [flows]                                           待測交換器的 flow entry 新增失敗(新增的 flow entry 不符合規範)
+Failed to add flows: flow stats request timeout.                         待測交換器的 flow entry 新增失敗(FlowStats Request 作業逾時)
+Failed to add flows: [err_msg]                                           待測交換器的 flow entry 新增失敗(接受到 FlowStats Request 的錯誤訊息)
+Added incorrect meters: [meters]                                         待測交換器的 meter entry 新增錯誤(新增的 meter entry 不符合規範)
+Failed to add meters: meter config stats request timeout.                待測交換器的 meter entry 新增失敗(MeterConfigStats Request 作業逾時)
+Failed to add meters: [err_msg]                                          待測交換器的 meter entry 新增失敗(接受到 MeterConfigStats Request 錯誤訊息)
+Added incorrect groups: [groups]                                         待測交換器的 group entry 新增錯誤(新增的 group entry 不符合規範)
+Failed to add groups: group desc stats request timeout.                  待測交換器的 group entry 新增失敗(GroupDescStats Request 作業逾時)
+Failed to add groups: [err_msg]                                          待測交換器的 group entry 新增失敗(接受到 GroupDescStats Request 錯誤訊息)
+Failed to request port stats from target: request timeout.               待測交換器的 PortStats 取得失敗(PortStats Request 作業逾時)
+Failed to request port stats from target: [err_msg]                      待測交換器的 PortStats 取得失敗(接受到 PortStats Request 的錯誤訊息)
+Failed to request port stats from tester: request timeout.               輔助交換器的 PortStats 取得失敗(PortStats Request 作業逾時)
+Failed to request port stats from tester: [err_msg]                      輔助交換器的 PortStats 取得失敗(接受到 PortStats Request 的錯誤訊息)
+Received incorrect [packet]                                              封包接收錯誤(接受到錯誤的封包)
+Receiving timeout: [detail]                                              封包接收錯誤(作業逾時)
+Faild to send packet: barrier request timeout.                           封包傳送失敗(Barrier Request 作業逾時)
+Faild to send packet: [err_msg]                                          封包傳送失敗(Packet-Out 的錯誤訊息)
+Table-miss error: increment in matched_count.                            table-miss 錯誤(match flow)
+Table-miss error: no change in lookup_count.                             table-miss 錯誤(封包不會被 flow table 所處理)
+Failed to request table stats: request timeout.                          table-miss 失敗(TableStats Request 作業逾時)
+Failed to request table stats: [err_msg]                                 table-miss 失敗(接收到 TableStats Request 的錯誤訊息)
+Added incorrect flows to tester_sw: [flows]                              輔助交換器 flow entry 新增錯誤(新增的 flow entry 不符合規範)
+Failed to add flows to tester_sw: flow stats request timeout.            輔助交換器 flow entry 新增失敗(FlowStats Request 作業逾時)
+Failed to add flows to tester_sw: [err_msg]                              輔助交換器 flow entry 新增失敗(FlowStats Request 的錯誤訊息)
+Failed to request flow stats: request timeout.                           測試 Throughput 時，輔助交換器 flow entry request 失敗(FlowStats Request 作業逾時)
+Failed to request flow stats: [err_msg]                                  測試 Throughput 時，輔助交換器 flow entry request 失敗(FlowStats Request 的錯誤訊息)
+Received unexpected throughput: [detail]                                 測試 Throughput 時，得到非預期的結果
+Disconnected from switch                                                 待測交換器或輔助交換器的連結中斷
 ======================================================================== ============================================================================================================
