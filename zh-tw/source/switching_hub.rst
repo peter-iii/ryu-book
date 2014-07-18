@@ -60,11 +60,8 @@ controller 使用 Packet-In 接收來自交換器的封包之後進行分析，�
 
 2. host A → host B
 
-    從 host A 向 host B 發送封包，Packet-In 訊息
-    ホストAからホストBへのパケットが送信されると、Packet-Inメッセージが送られ、
-    ホストAのMACアドレスがポート1に学習されます。ホストBのポートはまだ分かって
-    いないため、パケットはフラッディングされ、パケットはホストBとホストCで受信
-    されます。
+    當 host A 向 host B 發送封包。這時會觸發 Packet-In 訊息。host A 的 MAC 位址會被埠 1 給記錄下來。
+    由於 host B 的 MAC 位址尚未被學習，因此將會進行 Flooding 並將封包往 host B 和 host c 發送。
 
     .. only:: latex
 
@@ -80,19 +77,18 @@ controller 使用 Packet-In 接收來自交換器的封包之後進行分析，�
     Packet-In::
 
         in-port: 1
-        eth-dst: ホストB
-        eth-src: ホストA
+        eth-dst: host B
+        eth-src: host A
 
     Packet-Out::
 
-        action: OUTPUT:フラッディング
+        action: OUTPUT: Flooding
 
 
-3. ホストB→ホストA
+3. host B → host A
 
-    ホストBからホストAにパケットが返されると、フローテーブルにエントリを追加し、
-    またパケットはポート1に転送されます。そのため、このパケットはホストCでは
-    受信されません。
+    封包從 host B 向 host A 返回時，在 Flow Table 中新增一筆 Flow Entry，並將封包轉送到埠 1 。
+    因此，該封包並不會被 host C 收到。
 
     .. only:: latex
 
@@ -109,18 +105,17 @@ controller 使用 Packet-In 接收來自交換器的封包之後進行分析，�
     Packet-In::
 
         in-port: 4
-        eth-dst: ホストA
-        eth-src: ホストB
+        eth-dst: host A
+        eth-src: host B
 
     Packet-Out::
 
-        action: OUTPUT:ポート1
+        action: OUTPUT: port 1
 
 
-4. ホストA→ホストB
+4. host A → host B
 
-    再度、ホストAからホストBへのパケットが送信されると、フローテーブルに
-    エントリを追加し、またパケットはポート4に転送されます。
+    再次， host A 向 host B 發送封包，在 Flow Table 新增一個 Flow Entry 接著轉送封包到埠 4。
 
     .. only:: latex
 
@@ -137,51 +132,44 @@ controller 使用 Packet-In 接收來自交換器的封包之後進行分析，�
     Packet-In::
 
         in-port: 1
-        eth-dst: ホストB
-        eth-src: ホストA
+        eth-dst: host B
+        eth-src: host A
 
     Packet-Out::
 
-        action: OUTPUT:ポート4
+        action: OUTPUT: port 4
+
+接下來，讓我們實際來看一下在 Ryu 當中實作交換器的原始碼。
 
 
-次に、実際にRyuを使って実装されたスイッチングハブのソースコードを見ていきます。
-
-
-Ryuによるスイッチングハブの実装
+在Ryu上實作交換器
 -------------------------------
 
-スイッチングハブのソースコードは、Ryuのソースツリーにあります。
+交換器的原始碼在 Ryu 的原始碼之中有提供。
 
     ryu/app/simple_switch_13.py
 
-OpenFlowのバージョンに応じて、他にもsimple_switch.py(OpenFlow 1.0)、
-simple_switch_12.py(OpenFlow 1.2)がありますが、ここではOpenFlow 1.3に対応した
-実装を見ていきます。
+OpenFlow 其他的版本也有相對應的原始碼，例如 simple_switch.py(OpenFlow 1.0) 和 simple_switch_12.py(OpenFlow 1.2)。我們現在要來看的則是 OpenFlow 1.3 的版本。
 
-短いソースコードなので、全体をここに掲載します。
+由於原始碼不多，因此我們把全部拿來檢視。
 
 .. rst-class:: sourcecode
 
 .. literalinclude:: sources/simple_switch_13.py
 
+那麼，我們開始看一下其中的內容吧。
 
-それでは、それぞれの実装内容について見ていきます。
 
-
-クラスの定義と初期化
+類別的定義和初始化
 ^^^^^^^^^^^^^^^^^^^^
 
-Ryuアプリケーションとして実装するため、ryu.base.app_manager.RyuAppを
-継承します。また、OpenFlow 1.3を使用するため、 ``OFP_VERSIONS`` に
-OpenFlow 1.3のバージョンを指定しています。
+為了要實作 Ryu 應用程式，因此繼承了 ryu.base.app_manager.RyuApp。
+接著為了使用 OpenFlow 1.3 ，將 ``OFP_VERSIONS`` 指定為 OpenFlow 1.3。
 
-また、MACアドレステーブル mac_to_port を定義しています。
+然後，MAC 位址表也 mac_to_port 也已經定義。
 
-OpenFlowプロトコルでは、OpenFlowスイッチとコントローラが通信を行うために
-必要となるハンドシェイクなどのいくつかの手順が決められていますが、Ryuの
-フレームワークが処理してくれるため、Ryuアプリケーションでは意識する必要は
-ありません。
+OpenFlow通訊協定中有些程序像是握手協定，是讓 OpenFlow 交換器和 controller 之間進行通訊時使用且被定義好的。
+但是這些細節，對於一個 Ryu 應用程式來說是不擁要擔心或特別處理的。
 
 
 .. rst-class:: sourcecode
@@ -198,18 +186,14 @@ OpenFlowプロトコルでは、OpenFlowスイッチとコントローラが通�
         # ...
 
 
-イベントハンドラ
+事件管理(Event handler)
 ^^^^^^^^^^^^^^^^
 
-Ryuでは、OpenFlowメッセージを受信するとメッセージに対応したイベントが発生
-します。Ryuアプリケーションは、受け取りたいメッセージに対応したイベント
-ハンドラを実装します。
+對於 Ryu 來說，接受到一個 OpenFlow訊息即會產生一個相對應的事件。而 Ryu 應用程式則是必須實作事件管理以處理相對應發生的事件。
 
-イベントハンドラは、引数にイベントオブジェクトを持つ関数を定義し、
-``ryu.controller.handler.set_ev_cls`` デコレータで修飾します。
+事件管理(Event Handler)是一個擁有事件物件(Event Object)做為參數，並且使用``ryu.controller.handler.set_ev_cls`` 修飾(Decorator)的函數。
 
-set_ev_clsは、引数に受け取るメッセージに対応したイベントクラスとOpenFlow
-スイッチのステートを指定します。
+set_ev_cls 則指定事件類別得以接受訊息和交換器狀態作為參數。
 
 イベントクラス名は、 ``ryu.controller.ofp_event.EventOFP`` + <OpenFlow
 メッセージ名>となっています。例えば、Packet-Inメッセージの場合は、
