@@ -195,32 +195,29 @@ OpenFlow通訊協定中有些程序像是握手協定，是讓 OpenFlow 交換�
 
 set_ev_cls 則指定事件類別得以接受訊息和交換器狀態作為參數。
 
-イベントクラス名は、 ``ryu.controller.ofp_event.EventOFP`` + <OpenFlow
-メッセージ名>となっています。例えば、Packet-Inメッセージの場合は、
-``EventOFPPacketIn`` になります。
-詳しくは、Ryuのドキュメント `APIリファレンス <http://ryu.readthedocs.org/en/latest/>`_ を参照してください。
-ステートには、以下のいずれか、またはリストを指定します。
+事件類別名稱的規則為 ``ryu.controller.ofp_event.EventOFP`` + <OpenFlow訊息名稱>，
+例如：在 Packet-In 訊息的狀態下則為 ``EventOFPPacketIn`` 。
+詳細的內容請參考 Ryu 的文件 `API reference <http://ryu.readthedocs.org/en/latest/>`_ 。
+對於狀態來說，請指定下述列表中的一項。
 
 .. tabularcolumns:: |l|L|
 
 =========================================== ==================================
 定義                                        説明
 =========================================== ==================================
-ryu.controller.handler.HANDSHAKE_DISPATCHER HELLOメッセージの交換
-ryu.controller.handler.CONFIG_DISPATCHER    SwitchFeaturesメッセージの受信待ち
-ryu.controller.handler.MAIN_DISPATCHER      通常状態
-ryu.controller.handler.DEAD_DISPATCHER      コネクションの切断
+ryu.controller.handler.HANDSHAKE_DISPATCHER 交換 HELLO 訊息
+ryu.controller.handler.CONFIG_DISPATCHER    接收 SwitchFeatures訊息
+ryu.controller.handler.MAIN_DISPATCHER      一般狀態
+ryu.controller.handler.DEAD_DISPATCHER      連線中斷
 =========================================== ==================================
 
 
-Table-missフローエントリの追加
+新增 Table-miss Flow Entry 
 """"""""""""""""""""""""""""""
 
-OpenFlowスイッチとのハンドシェイク完了後にTable-missフローエントリを
-フローテーブルに追加し、Packet-Inメッセージを受信する準備を行います。
+OpenFlow 交換器的握手協議完成之後新增 Table-miss Flow Entry 到 Flow Table 中為接收 Packet-In 訊息做準備。
 
-具体的には、Switch Features(Features Reply)メッセージを受け取り、そこで
-Table-missフローエントリの追加を行います。
+具體來說，接收到 Switch Features(Features Reply) 訊息後就會新增 Table-miss Flow Entry。
 
 .. rst-class:: sourcecode
 
@@ -234,26 +231,23 @@ Table-missフローエントリの追加を行います。
 
         # ...
 
-``ev.msg`` には、イベントに対応するOpenFlowメッセージクラスのインスタンスが
-格納されています。この場合は、
-``ryu.ofproto.ofproto_v1_3_parser.OFPSwitchFeatures`` になります。
+``ev.msg``是用來儲存對應事件的 OpenFlow 訊息類別實體。
+在這個例子中則是 ``ryu.ofproto.ofproto_v1_3_parser.OFPSwitchFeatures``。
 
-``msg.datapath`` には、このメッセージを発行したOpenFlowスイッチに対応する
-``ryu.controller.controller.Datapath`` クラスのインスタンスが格納されています。
+``msg.datapath`` 這個訊息是用來儲存 OpenFlow 交換器的 ``ryu.controller.controller.Datapath`` 類別所對應的實體。
 
-Datapathクラスは、OpenFlowスイッチとの実際の通信処理や受信メッセージに対応
-したイベントの発行などの重要な処理を行っています。
+Datapath 類別是用來處理 OpenFlow 交換器重要的訊息，例如執行與交換器的通訊和觸發接收訊息相關的事件。
 
-Ryuアプリケーションで利用する主な属性は以下のものです。
+Ryu 應用程式所使用的主要屬性如下：
 
 .. tabularcolumns:: |l|L|
 
 ============== ==============================================================
-属性名         説明
+属性名稱         説明
 ============== ==============================================================
-id             接続しているOpenFlowスイッチのID(データパスID)です。
-ofproto        使用しているOpenFlowバージョンに対応したofprotoモジュールを
-               示します。現時点では、以下のいずれかになります。
+id             連接 OpenFlow 交換器的 ID(datapath ID)。
+ofproto        表示使用的 OpenFlow 版本所對應的 ofproto module。
+               目前的狀況下是下述的其中之一。
 
                ``ryu.ofproto.ofproto_v1_0``
 
@@ -263,8 +257,8 @@ ofproto        使用しているOpenFlowバージョンに対応したofproto�
 
                ``ryu.ofproto.ofproto_v1_4``
 
-ofproto_parser ofprotoと同様に、ofproto_parserモジュールを示します。
-               現時点では、以下のいずれかになります。
+ofproto_parser 和 ofproto 一樣，表示 ofproto_parser module。
+               在目前的狀況下，會是下述之一。
 
                ``ryu.ofproto.ofproto_v1_0_parser``
 
@@ -275,18 +269,17 @@ ofproto_parser ofprotoと同様に、ofproto_parserモジュールを示しま�
                ``ryu.ofproto.ofproto_v1_4_parser``
 ============== ==============================================================
 
-Ryuアプリケーションで利用するDatapathクラスの主なメソッドは以下のものです。
+Ryu 應用程式中 Datapath 類別的主要方法如下：
 
 send_msg(msg)
 
-    OpenFlowメッセージを送信します。
-    msgは、送信OpenFlowメッセージに対応した
-    ``ryu.ofproto.ofproto_parser.MsgBase`` のサブクラスです。
+    發送 OpenFlow 訊息。
+    msg 是發送 OpenFlow 訊息的 
+    ``ryu.ofproto.ofproto_parser.MsgBase`` 類別的子類別。
 
 
-スイッチングハブでは、受信したSwitch Featuresメッセージ自体は特に
-使いません。Table-missフローエントリを追加するタイミングを得るための
-イベントとして扱っています。
+交換器本身不僅僅使用 Switch Features 訊息。
+使用事件處理以取得新增 Table-miss Flow Entry 的時間點。
 
 .. rst-class:: sourcecode
 
@@ -307,43 +300,36 @@ send_msg(msg)
                                           ofproto.OFPCML_NO_BUFFER)]
         self.add_flow(datapath, 0, match, actions)
 
-Table-missフローエントリは、優先度が最低(0)で、すべてのパケットにマッチ
-するエントリです。このエントリのインストラクションにコントローラポート
-への出力アクションを指定することで、受信パケットが、すべての通常のフロー
-エントリにマッチしなかった場合、Packet-Inを発行するようになります。
+Table-miss Flow Entry 的優先權為 0 ，即最低的優先權，而且此 Entry 可以 match 所有的封包。
+這個 Entry 的 Instruction 通常指定為 output action ，並且輸出的埠將指向 controller。
+因此當封包沒有 match 任何一個普通 Flow 時，則觸發 Packet-In 。
+
 
 .. NOTE::
 
-    2014年1月現在のOpen vSwitchは、OpenFlow 1.3への対応が不完全であり、
-    OpenFlow 1.3以前と同様にデフォルトでPacket-Inが発行されます。また、
-    Table-missフローエントリにも現時点では未対応で、通常のフローエントリ
-    として扱われます。
+    目前(2014年1月)，市面上的 Open vSwitch 對於 OpenFlow 1.3 的支援並不完整
+    對於 OpenFlow 1.3 以前的版本 Packet-In 是個基本的功能。
+    而且 Table-miss Flow Entry 也尚未被支援，僅僅使用一般的 Flow Entry 取代。
 
-すべてのパケットにマッチさせるため、空のマッチを生成します。マッチは
-``OFPMatch`` クラスで表されます。
+為了 match 所有的封包，空的 match 將被使用。match 表示於 ``OFPMatch`` 類別中。
 
-次に、コントローラポートへ転送するためのOUTPUTアクションクラス(
-``OFPActionOutput``)のインスタンスを生成します。
-出力先にコントローラ、パケット全体をコントローラに送信するためにmax_lenには
-``OFPCML_NO_BUFFER`` を指定しています。
+接下來，為了轉送到 controller 埠， OUTPUT action 類別(``OFPActionOutput``)的實例將會被產生。
+Controller 會被指定為封包的目的地，``OFPCML_NO_BUFFER`` 會被設定為 max_len 以便接下來的封包傳送。
+
 
 .. NOTE::
 
-    コントローラにはパケットの先頭部分(Ethernetヘッダー分)だけを送信
-    させ、残りはスイッチにバッファーさせた方が効率の点では望ましいの
-    ですが、Open vSwitchのバグ(2014年1月現在)を回避するために、ここでは
-    パケット全体を送信させます。
+    送往 controller 的封包可以僅傳送 header 部分(Ethernet header)，剩下的則存在緩衝區間中以增加效率。
+    但目前 (2014年1月) Open vSwitch 的臭蟲關係，會將所有的封包傳送。
 
-最後に、優先度に0(最低)を指定して ``add_flow()`` メソッドを実行してFlow Mod
-メッセージを送信します。add_flow()メソッドの内容については後述します。
+最後，設定優先權為0(最低優先權)。然後執行 ``add_flow()`` 方法以發送 Flow Mod 訊息。
+add_flow()方法的內容將會在稍後進行說明。
 
 
-
-
-Packet-inメッセージ
+Packet-in 訊息
 """""""""""""""""""
 
-未知の宛先の受信パケットを受け付けるため、Packet-Inイベントのハンドラを作成します。
+為了接收處理未知目的地的封包，需要 Packet-In 事件管理。
 
 .. rst-class:: sourcecode
 
@@ -359,24 +345,22 @@ Packet-inメッセージ
         # ...
 
 
-OFPPacketInクラスのよく使われる属性には以下のようなものがあります。
+OFPPacketIn 類別經常使用的屬性如下所示。
 
 .. tabularcolumns:: |l|L|
 
 ========= ===================================================================
-属性名    説明
+屬性名稱    説明
 ========= ===================================================================
-match     ``ryu.ofproto.ofproto_v1_3_parser.OFPMatch`` クラスのインスタンス
-          で、受信パケットのメタ情報が設定されています。
-data      受信パケット自体を示すバイナリデータです。
-total_len 受信パケットのデータ長です。
-buffer_id 受信パケットがOpenFlowスイッチ上でバッファされている場合、
-          そのIDが示されます。バッファされていない場合は、
-          ``ryu.ofproto.ofproto_v1_3.OFP_NO_BUFFER`` がセットされます。
+match     ``ryu.ofproto.ofproto_v1_3_parser.OFPMatch`` 類別的實體，其中儲存接收封包的 Meta 資訊。
+data      接收封包本身的 binary 資料
+total_len 接收封包的資料長度
+buffer_id 接收封包的內容若是存在 OpenFlow 交換器上，所指定的ID
+          如果沒有 buffer 的狀況下，則設定 ``ryu.ofproto.ofproto_v1_3.OFP_NO_BUFFER``
 ========= ===================================================================
 
 
-MACアドレステーブルの更新
+MAC address table 更新
 """""""""""""""""""""""""
 
 .. rst-class:: sourcecode
@@ -404,18 +388,15 @@ MACアドレステーブルの更新
 
         # ...
 
-OFPPacketInクラスのmatchから、受信ポート(``in_port``)を取得します。
-宛先MACアドレスと送信元MACアドレスは、Ryuのパケットライブラリを使って、
-受信パケットのEthernetヘッダから取得しています。
+從 OFPPacketIn 類別的 match 得到接收埠(``in_port``)的資訊。
+目標 MAC address 和來源 MAC address 使用 Ryu 的封包函式庫，從接收到的封包的 Ethernet header 取得。
 
-取得した送信元MACアドレスと受信ポート番号で、MACアドレステーブルを更新します。
+藉由得知目標 Mac address 和來源 Mac address，更新 MAC address table。
 
-複数のOpenFlowスイッチとの接続に対応するため、MACアドレステーブルはOpenFlow
-スイッチ毎に管理するようになっています。OpenFlowスイッチの識別にはデータパスID
-を用いています。
+為了可以對應連接到多個 OpenFlow 交換器，Mac address table 和每一個交換器之間的識別，就使用 datapath ID來辨認。
 
 
-転送先ポートの判定
+判斷轉送封包的埠
 """"""""""""""""""
 
 宛先MACアドレスが、MACアドレステーブルに存在する場合は対応するポート番号を、
