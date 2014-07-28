@@ -399,9 +399,8 @@ MAC address table 更新
 判斷轉送封包的埠
 """"""""""""""""""
 
-宛先MACアドレスが、MACアドレステーブルに存在する場合は対応するポート番号を、
-見つからなかった場合はフラッディング(``OFPP_FLOOD``)を出力ポートに指定した
-OUTPUTアクションクラスのインスタンスを生成します。
+目的 MAC address 若是存在于 MAC address table ，則判斷該埠號為輸出。反之若不存在于 MAC address table 則 OUTPUT action 類別的實體將會生成 flooding (``OFPP_FLOOD``) 給目的埠號使用。
+
 
 .. rst-class:: sourcecode
 
@@ -425,41 +424,32 @@ OUTPUTアクションクラスのインスタンスを生成します。
         # ...
 
 
-宛先MACアドレスが見つかった場合は、OpenFlowスイッチのフローテーブルに
-エントリを追加します。
+若是找到了目標 MAC address ，則在交換器的 flow table 中新增。
 
-Table-missフローエントリの追加と同様に、マッチとアクションを指定して
-add_flow()を実行し、フローエントリを追加します。
+Table-miss Flow Entry 包含 match 和 action 透過 add_flow() 來新增。
 
-Table-missフローエントリとは違って、今回はマッチに条件を設定します。
-今回のスイッチングハブの実装では、受信ポート(in_port)と宛先MACアドレス
-(eth_dst)を指定しています。例えば、「ポート1で受信したホストB宛」のパケット
-が対象となります。
+不同於平常的 Table-miss Flow Entry ，這次將設定 match 條件。
+本次交換器實作中，接收埠(in_port)和目的 MAC address (eth_dst)已指定。例如，接收到來自埠 1 的封包並傳送到 host B。
 
-今回のフローエントリでは、優先度に1を指定しています。値が大きい
-ほど優先度が高くなるので、ここで追加するフローエントリは、Table-missフロー
-エントリより先に評価されるようになります。
+本次的 Flow Entry 優先權指定為 1。優先權的值越大，表示有更高的優先權。因此，這邊新增的 Flow Entry 將會先於 Table-miss Flow Entry 被執行。
 
-前述のアクションを含めてまとめると、以下のようなエントリをフローテーブル
-に追加します。
+上述的內容包含 action ，整理如下列的 Entry 並新增至 Flow Entry：
 
-    ポート1で受信した、ホストB宛(宛先MACアドレスがB)のパケットを、
-    ポート4に転送する
+    port 1 接收到的封包，若要轉送至 host B (目標 MAC address B) 的封包則轉送至 port 4。
 
 .. HINT::
 
-    OpenFlowでは、NORMALポートという論理的な出力ポートがオプションで規定
-    されており、出力ポートにNORMALを指定すると、スイッチのL2/L3機能を使っ
-    てパケットを処理するようになります。つまり、すべてのパケットをNORMAL
-    ポートに出力するように指示するだけで、スイッチングハブとして動作する
-    ようにできますが、ここでは各々の処理をOpenFlowを使って実現するものとします。
+    在 OpenFlow 中，有個邏輯埠叫做 NORMAL 在規範中被列為選項。當被指定的埠為 NORMAL 時，
+    L2/L3 的功能將會被啟用用來處理封包。
+    意思是當把所有輸出的埠均設定為 NORMAL 時，交換器將會作為一個普通的交換器存在。
+    差別在於我們是使用 OpenFlow 來達到這樣的功能。
 
 
-フローエントリの追加処理
+Flow Entry 的新增處理
 """"""""""""""""""""""""
 
-Packet-Inハンドラの処理がまだ終わっていませんが、ここで一旦フローエントリ
-を追加するメソッドの方を見ていきます。
+Packet-In handler 的處理尚未被說明，但在這之前我們先來看一看 Flow Entry 的新增方法。
+
 
 .. rst-class:: sourcecode
 
@@ -474,14 +464,12 @@ Packet-Inハンドラの処理がまだ終わっていませんが、ここで�
 
         # ...
 
-フローエントリには、対象となるパケットの条件を示すマッチと、そのパケット
-に対する操作を示すインストラクション、エントリの優先度、有効時間などを
-設定します。
+對於 Flow Entry 來說，設定 match 條件以分辨目標封包，設定 instruction 以處理封包以及 Entry 的優先權和有效時間。
 
-スイッチングハブの実装では、インストラクションにApply Actionsを使用して、
-指定したアクションを直ちに適用するように設定しています。
+對交換器的的實作，Apply Actions 是用來設定那些立即必須執行的 action 所使用。
 
-最後に、Flow Modメッセージを発行してフローテーブルにエントリを追加します。
+最後，透過 Flow Mod 訊息將 Flow Entry 新增到 Flow Table 中。
+
 
 .. rst-class:: sourcecode
 
@@ -494,42 +482,37 @@ Packet-Inハンドラの処理がまだ終わっていませんが、ここで�
                                 match=match, instructions=inst)
         datapath.send_msg(mod)
 
-Flow Modメッセージに対応するクラスは ``OFPFlowMod`` クラスです。OFPFlowMod
-クラスのインスタンスを生成して、Datapath.send_msg() メソッドでOpenFlow
-スイッチにメッセージを送信します。
+Flow Mod 訊息的類別為 ``OFPFlowMod`` 。使用 OFPFlowMod 所產生的實體透過 Datapath.send_msg() 方法來發送訊息給 OpenFlow 交換器。
 
-OFPFlowModクラスのコンストラクタには多くの引数がありますが、多くのものは
-大抵の場合、デフォルト値のままで済みます。かっこ内はデフォルト値です。
+OFPFlowMod 類別的建構子，參數相當的多，但是在大多數的情況下都有其預設值，原始碼中括號內的即是預設值。
 
 datapath
 
-    フローテーブルを操作する対象となるOpenFlowスイッチに対応するDatapath
-    クラスのインスタンスです。通常は、Packet-Inメッセージなどのハンドラ
-    に渡されるイベントから取得したものを指定します。
+    OpenFlow 交換器以及Flow Table 的操作都是透過 Datapath 類別的實體來進行。
+    通常的情況下，會從事件傳遞給事件管理的訊息，例如：Packet-In 訊息中取得。
 
 cookie (0)
 
-    コントローラが指定する任意の値で、エントリの更新または削除を行う際の
-    フィルタ条件として使用できます。パケットの処理では使用されません。
+    controller 所設定儲存的資料，在 Entry 的更新或者刪除的時候所需要使用的資料都會放在這邊，作為過濾器使用。
+    不可以作為封包處理的參數。
 
 cookie_mask (0)
 
-    エントリの更新または削除の場合に、0以外の値を指定すると、エントリの
-    cookie値による操作対象エントリのフィルタとして使用されます。
+    Entry 的更新或刪除時，若是該值為非零。則作為指定 Entry 的 cookie 使用。
 
 table_id (0)
 
-    操作対象のフローテーブルのテーブルIDを指定します。
+    指定 Flow Entry 的 Table ID 。
 
 command (ofproto_v1_3.OFPFC_ADD)
 
-    どのような操作を行うかを指定します。
+    指定該要執行何項操作。
 
     ==================== ========================================
     値                   説明
     ==================== ========================================
-    OFPFC_ADD            新しいフローエントリを追加します
-    OFPFC_MODIFY         フローエントリを更新します
+    OFPFC_ADD            Flow Entry 新增
+    OFPFC_MODIFY         Flow Entry 更新
     OFPFC_MODIFY_STRICT  厳格に一致するフローエントリを更新します
     OFPFC_DELETE         フローエントリを削除します
     OFPFC_DELETE_STRICT  厳格に一致するフローエントリを削除します
