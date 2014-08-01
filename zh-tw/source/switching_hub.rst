@@ -513,95 +513,83 @@ command (ofproto_v1_3.OFPFC_ADD)
     ==================== ========================================
     OFPFC_ADD            Flow Entry 新增
     OFPFC_MODIFY         Flow Entry 更新
-    OFPFC_MODIFY_STRICT  厳格に一致するフローエントリを更新します
-    OFPFC_DELETE         フローエントリを削除します
-    OFPFC_DELETE_STRICT  厳格に一致するフローエントリを削除します
+    OFPFC_MODIFY_STRICT  嚴格的 Flow Entry 更新
+    OFPFC_DELETE         Flow Entry 刪除
+    OFPFC_DELETE_STRICT  嚴格的 Flow Entry 刪除
     ==================== ========================================
 
 idle_timeout (0)
 
-    このエントリの有効期限を秒単位で指定します。エントリが参照されずに
-    idle_timeoutで指定した時間を過ぎた場合、そのエントリは削除されます。
-    エントリが参照されると経過時間はリセットされます。
+    該 Flow Entry 的有效期限，以秒為單位。Flow Entry 如果未被參照而且超過了指定的時間之後，
+    這個 Flow Entry 將會被刪除。如果 Flow Entry 有被參照，則超過時間之後會重新計算。
 
-    エントリが削除されるとFlow Removedメッセージがコントローラに通知され
-    ます。
+    在 Flow Entry 被刪除之後就會發出 Flow Removed 訊息通知 Controller 。
 
 hard_timeout (0)
 
-    このエントリの有効期限を秒単位で指定します。idle_timeoutと違って、
-    hard_timeoutでは、エントリが参照されても経過時間はリセットされません。
-    つまり、エントリの参照の有無に関わらず、指定された時間が経過すると
-    エントリが削除されます。
+    該 Flow Entry 的有效期限，以秒為單位。跟 idle_timeout 不同的地方是，
+    hard_timeout 在超過時限後並不會重新歸零計算。
+    也就是說跟 Flow Entry 有沒有被參照無關，只要超過指定的時間就會被刪除。
 
-    idle_timeoutと同様に、エントリが削除されるとFlow Removedメッセージが
-    通知されます。
+    跟 idle_timeout 一樣，當 Flow Entry 被刪除時，Flow Removed 訊息將會被發送通知 Controller。
 
 priority (0)
 
-    このエントリの優先度を指定します。
-    値が大きいほど、優先度も高くなります。
+    指定該 Flow Entry 的優先權。數值越大表示權限越高。
 
 buffer_id (ofproto_v1_3.OFP_NO_BUFFER)
 
-    OpenFlowスイッチ上でバッファされたパケットのバッファIDを指定します。
-    バッファIDはPacket-Inメッセージで通知されたものであり、指定すると
-    OFPP_TABLEを出力ポートに指定したPacket-OutメッセージとFlow Modメッセージ
-    の2つのメッセージを送ったのと同じように処理されます。
-    commandがOFPFC_DELETEまたはOFPFC_DELETE_STRICTの場合は無視されます。
+    指定 OpenFlow 交換器上用來儲存封包的緩衝區ID。
+    緩衝區ID會放在通知 Controller 的 Packet-In 訊息中，並且和接下來的 OFPP_TABLE 所指定的輸出埠和 Flow Mod 訊息處理時可以參照。
+    當發送的命令訊息為 OFPFC_DELETE  或 OFPFC_DELETE_STRICT 時，將會忽略本數值。
 
-    バッファIDを指定しない場合は、 ``OFP_NO_BUFFER`` をセットします。
+    如果不指定緩衝區ID的時候，必須使用 ``OFP_NO_BUFFER`` 作為設定值。
 
 out_port (0)
 
-    OFPFC_DELETEまたはOFPFC_DELETE_STRICTの場合に、対象となるエントリを
-    出力ポートでフィルタします。OFPFC_ADD、OFPFC_MODIFY、OFPFC_MODIFY_STRICT
-    の場合は無視されます。
+    OFPFC_DELETE 和 OFPFC_DELETE_STRICT 命令用來指定輸出埠的參數。
+    命令為 OFPFC_ADD、OFPFC_MODIFY、OFPFC_MODIFY_STRICT 時則可以忽略。
 
-    出力ポートでのフィルタを無効にするには、 ``OFPP_ANY`` を指定します。
+    若要讓本參數無效時，則指定輸出埠為 ``OFPP_ANY``。
 
 out_group (0)
 
-    out_portと同様に、出力グループでフィルタします。
+    跟 out_port 一樣，作為一個輸出埠，但是轉到特定的 group。
 
-    無効にするには、 ``OFPG_ANY`` を指定します。
+    若要使其無效，則指定為 ``OFPG_ANY`` 。
 
 flags (0)
 
-    以下のフラグの組み合わせを指定することができます。
+    下列的 flags 可以被組合使用。
 
     .. tabularcolumns:: |l|L|
 
     ===================== ===================================================
     値                    説明
     ===================== ===================================================
-    OFPFF_SEND_FLOW_REM   このエントリが削除された時に、コントローラにFlow
-                          Removedメッセージを発行します。
-    OFPFF_CHECK_OVERLAP   OFPFC_ADDの場合に、重複するエントリのチェックを行い
-                          ます。重複するエントリがあった場合にはFlow Modは失
-                          敗し、エラーが返されます。
-    OFPFF_RESET_COUNTS    該当エントリのパケットカウンタとバイトカウンタを
-                          リセットします。
-    OFPFF_NO_PKT_COUNTS   このエントリのパケットカウンタを無効にします。
-    OFPFF_NO_BYT_COUNTS   このエントリのバイトカウンタを無効にします。
+    OFPFF_SEND_FLOW_REM   當該 Flow Entry 被移除的時候，對 controller 發送 Removed 訊息。
+    OFPFF_CHECK_OVERLAP   使用 OFPFC_ADD 時，檢查是否有重複的 Flow Entry 存在。
+                          若是有則觸發 Flow Mod 失敗，並返回錯誤訊息。
+    OFPFF_RESET_COUNTS    重設該 Flow Entry 的 packet counter 和 byte counter。
+    OFPFF_NO_PKT_COUNTS   關閉該 Flow Entry 的 packet counter 功能。
+    OFPFF_NO_BYT_COUNTS   關閉該 Flow Entry 的 byte counter 功能。
     ===================== ===================================================
 
 match (None)
 
-    マッチを指定します。
+    設定 match 條件。
 
 instructions ([])
 
-    インストラクションのリストを指定します。
+    設定 instruction 。
 
-
-パケットの転送
+封包轉送
 """"""""""""""
 
-Packet-Inハンドラに戻り、最後の処理の説明です。
+回到 Packet-In handler 並說明最後的流程。
 
-宛先MACアドレスがMACアドレステーブルから見つかったかどうかに関わらず、最終的
-にはPacket-Outメッセージを発行して、受信パケットを転送します。
+在 MAC address table 中找尋目的 MAC address ，若是有找到則發送 Packet-Out 訊息，並且轉送封包。
+
 
 .. rst-class:: sourcecode
 
@@ -618,78 +606,70 @@ Packet-Inハンドラに戻り、最後の処理の説明です。
                                   in_port=in_port, actions=actions, data=data)
         datapath.send_msg(out)
 
-Packet-Outメッセージに対応するクラスは ``OFPPacketOut`` クラスです。
+Packet-Out 訊息相對應的類別是 ``OFPPacketOut`` 。
 
-OFPPacketOutのコンストラクタの引数は以下のようになっています。
+OFPPacketOut 建構子的參數如下所示。
 
 datapath
 
-    OpenFlowスイッチに対応するDatapathクラスのインスタンスを指定します。
+    指定 OpenFlow 交換器對應的 Datapath 類別實體。
 
 buffer_id
 
-    OpenFlowスイッチ上でバッファされたパケットのバッファIDを指定します。
-    バッファを使用しない場合は、 ``OFP_NO_BUFFER`` を指定します。
+    指定 OpenFlow 交換器上的封包對應的緩衝區。
+    如果不想使用緩衝區，則指定為 ``OFP_NO_BUFFER``。
 
 in_port
 
-    パケットを受信したポートを指定します。受信パケットでない場合は、
-    ``OFPP_CONTROLLER`` を指定します。
+    制定接收封包的埠號。
+    如果不想使用的話就指定為 ``OFPP_CONTROLLER``。
 
 actions
 
-    アクションのリストを指定します。
+    指定 actions list。
 
 data
 
-    パケットのバイナリデータを指定します。buffer_idに ``OFP_NO_BUFFER``
-    が指定された場合に使用されます。OpenFlowスイッチのバッファを利用す
-    る場合は省略します。
+    設定封包的 binary data 。主要用在 buffer_id 為 ``OFP_NO_BUFFER`` 的情況。
+    如果使用了 OpenFlow 交換器的緩衝區則無可以省略。
 
 
-スイッチングハブの実装では、buffer_idにPacket-Inメッセージのbuffer_idを
-指定しています。Packet-Inメッセージのbuffer_idが無効だった場合は、
-Packet-Inの受信パケットをdataに指定して、パケットを送信しています。
+交換器的實作時，在 Packet-In 訊息中指定 buffer_id。若是 Packet-In 訊息中 buffer_id 已被設定為無效時。
+Packet-In 的封包必須指定 data 以便傳送。
+
+以上，交換器的原始碼說明就到這邊。
+接下來我們將執行該交換器以確認相關的動作。
 
 
-これで、スイッチングハブのソースコードの説明は終わりです。
-次は、このスイッチングハブを実行して、実際の動作を確認します。
-
-
-Ryuアプリケーションの実行
+執行 Ryu 應用程式
 -------------------------
 
-スイッチングハブの実行のため、OpenFlowスイッチにはOpen vSwitch、実行
-環境としてmininetを使います。
+為了執行交換器，OpenFlow 交換器採用 Open vSwitch，而執行環境則是在 mininet 上。
 
-Ryu用のOpenFlow Tutorial VMイメージが用意されているので、このVMイメージ
-を利用すると実験環境を簡単に準備することができます。
+由於 Ryu 的 OpenFlow Tutorial VM 映像檔已經準備好了，有了該 VM 映像檔會讓準備工作較為簡單。
 
-VMイメージ
+VM 映像檔
 
     http://sourceforge.net/projects/ryu/files/vmimages/OpenFlowTutorial/
 
     OpenFlow_Tutorial_Ryu3.2.ova (約1.4GB)
 
-関連ドキュメント(Wikiページ)
+相關文件(Wiki網頁)
 
     https://github.com/osrg/ryu/wiki/OpenFlow_Tutorial
 
-ドキュメントにあるVMイメージは、Open vSwitchとRyuのバージョンが古いため
-ご注意ください。
+文件中的描述和 VM 映像檔有可能使用的是較舊版本的 Open vSwitch 和 Ryu ，請注意。
+
+若是不想使用該 VM 映像檔，您當然可以自行打造環境。若是您決定自行搭建環境，請參考以下軟體的版本。
 
 
-このVMイメージを使わず、自分で環境を構築することも当然できます。VMイメージ
-で使用している各ソフトウェアのバージョンは以下の通りですので、自身で構築
-する場合は参考にしてください。
-
-Mininet VM バージョン2.0.0
+Mininet VM 2.0.0
   http://mininet.org/download/
 
-Open vSwitch バージョン1.11.0
+Open vSwitch 1.11.0
   http://openvswitch.org/download/
 
-Ryu バージョン3.2
+Ryu 3.2
   https://github.com/osrg/ryu/
 
     .. rst-class:: console
@@ -698,41 +678,39 @@ Ryu バージョン3.2
 
         $ sudo pip install ryu
 
+但在這邊，我們使用 Ryu 的 OpenFlow Tutorial VM 映像檔。
 
-ここでは、Ryu用OpenFlow TutorialのVMイメージを利用します。
-
-Mininetの実行
+執行 Mininet
 ^^^^^^^^^^^^^
 
-mininetからxtermを起動するため、Xが使える環境が必要です。
+因為所需要的終端機 xterm 是從 mininet 中啟動，因此 X windows 的環境是必要的。
 
-ここでは、OpenFlow TutorialのVMを利用しているため、
-sshでX11 Forwardingを有効にしてログインします。
+為了使用 OpenFlow Tutorial 的 VM，請把 ssh 的 X11 Forwarding 功能打開並進行登入。
+
 
     ::
 
         $ ssh -X ryu@<VMのアドレス>
 
-ユーザー名は ``ryu`` 、パスワードも ``ryu`` です。
+使用者名稱為 ``ryu`` 、密碼也是 ``ryu`` 。
 
+登入以後使用 ``mn`` 指令啟動 Mininet 環境。
 
-ログインできたら、 ``mn`` コマンドによりMininet環境を起動します。
+要建構的是 host 3 台，交換器 1 台的簡單環境。
 
-構築する環境は、ホスト3台、スイッチ1台のシンプルな構成です。
-
-mnコマンドのパラメータは、以下のようになります。
+mn 命令的參數如下：
 
 ============ ========== ===========================================
-パラメータ   値         説明
+參數名稱       參數值      説明
 ============ ========== ===========================================
-topo         single,3   スイッチが1台、ホストが3台のトポロジ
-mac          なし       自動的にホストのMACアドレスをセットする
-switch       ovsk       Open vSwitchを使用する
-controller   remote     OpenFlowコントローラは外部のものを利用する
-x            なし       xtermを起動する
+topo         single,3   交換器 1 台，host 3 台的拓璞
+mac          無         自動設定 host 的 MAC address
+switch       ovsk       使用 Open vSwitch
+controller   remote     指定外部的 OpenFlow controller
+x            無          啟動 xterm
 ============ ========== ===========================================
 
-実行例は以下のようになります。
+執行的方法如下：
 
 .. rst-class:: console
 
@@ -757,14 +735,12 @@ x            なし       xtermを起動する
     *** Starting CLI:
     mininet>
 
-実行するとデスクトップPC上でxtermが5つ起動します。
-それぞれ、ホスト1～3、スイッチ、コントローラに対応します。
+執行之後，將會在 x windows 出現 5 個 xterm 視窗。
+分別對應到 host 1 ~ 3 ，交換器和 controller 。
 
-スイッチのxtermからコマンドを実行して、使用するOpenFlowのバージョンを
-セットします。ウインドウタイトルが「switch: s1 (root)」となっている
-ものがスイッチ用のxtermです。
+在交換器的 xterm 中設定 OpenFlow 的版本，視窗的標題為 「switch: s1 (root)」。
 
-まずはOpen vSwitchの状態を見てみます。
+首先查看 Open vSwitch 的狀態。
 
 switch: s1:
 
@@ -799,10 +775,9 @@ switch: s1:
             port 4: s1-eth3
     root@ryu-vm:~#
 
-スイッチ(ブリッジ) *s1* ができていて、ホストに対応するポートが
-3つ追加されています。
+交換器(橋接器) *s1* 被建立，並且增加 3 個埠分別連線到 3 個 host。
 
-次にOpenFlowのバージョンとして1.3を設定します。
+接下來設定 OpenFlow 的版本為 1.3。
 
 switch: s1:
 
@@ -813,7 +788,7 @@ switch: s1:
     root@ryu-vm:~# ovs-vsctl set Bridge s1 protocols=OpenFlow13
     root@ryu-vm:~#
 
-空のフローテーブルを確認してみます。
+檢查空白的 Flow Table。
 
 switch: s1:
 
@@ -825,17 +800,15 @@ switch: s1:
     OFPST_FLOW reply (OF1.3) (xid=0x2):
     root@ryu-vm:~#
 
-ovs-ofctlコマンドには、オプションで使用するOpenFlowのバージョンを
-指定する必要があります。デフォルトは *OpenFlow10* です。
+ovs-ofctl 命令選項是用來指定 OpenFlow 版本。預設值是 *OpenFlow10*。
 
 
-スイッチングハブの実行
+交換器的執行
 ^^^^^^^^^^^^^^^^^^^^^^
 
-準備が整ったので、Ryuアプリケーションを実行します。
+準備工作到此已經結束，接下來開始執行 Ryu 應用程式。
 
-ウインドウタイトルが「controller: c0 (root)」となっているxtermから
-次のコマンドを実行します。
+在視窗標題為 「controller: c0 (root)」 的 xterm 執行下述指令。
 
 controller: c0:
 
@@ -866,7 +839,7 @@ controller: c0:
     switch features ev version: 0x4 msg_type 0x6 xid 0xff9ad15b OFPSwitchFeatures(auxiliary_id=0,capabilities=71,datapath_id=1,n_buffers=256,n_tables=254)
     move onto main mode
 
-OVSとの接続に時間がかかる場合がありますが、少し待つと上のように
+正在進行 OVS 的連接動作，需要花一點時間。
 
 .. rst-class:: console
 
@@ -877,12 +850,11 @@ OVSとの接続に時間がかかる場合がありますが、少し待つと�
     ...
     move onto main mode
 
-と表示されます。
+完成之後就會顯示上面的訊息。
 
-これで、OVSと接続し、ハンドシェイクが行われ、Table-missフローエントリが
-追加され、Packet-Inを待っている状態になっています。
+現在，OVS已經連接，handshake 已經執行完畢，Table-miss Flow Entry 已經加入，目前正處於等待 Packet-In 的狀態。 
 
-Table-missフローエントリが追加されていることを確認します。
+確認 Table-miss Flow Entry 已經被加入。
 
 switch: s1:
 
@@ -895,39 +867,33 @@ switch: s1:
      cookie=0x0, duration=105.975s, table=0, n_packets=0, n_bytes=0, priority=0 actions=CONTROLLER:65535
     root@ryu-vm:~#
 
-優先度が0で、マッチがなく、アクションにCONTROLLER、送信データサイズ65535
-(0xffff = OFPCML_NO_BUFFER)が指定されています。
+優先權為0，沒有 macthc，action  為 CONTROLLER，重送的資料大小為 65535(0xffff = OFPCML_NO_BUFFER)。
 
 
-動作の確認
+操作確認
 ^^^^^^^^^^
 
-ホスト1からホスト2へpingを実行します。
+從 host 1 向 host 2 發送 ping。
 
 1. ARP request
 
-    この時点では、ホスト1はホスト2のMACアドレスを知らないので、ICMP echo
-    requestに先んじてARP requestをブロードキャストするはずです。
-    このブロードキャストパケットはホスト2とホスト3で受信されます。
+    此時，host 1 並不知道 host 2 的 MAC address，原則上 ICMP echo request 之前的 ARP request 是用 廣播的方式發送。這樣的廣播方式會讓 host 2 和 host 3 都接受到訊息。
 
 2. ARP reply
 
-    ホスト2がARPに応答して、ホスト1にARP replyを返します。
+    host 2 使用 ARP reply 回覆 host 1 要求。
 
 3. ICMP echo request
 
-    これでホスト1はホスト2のMACアドレスを知ることができたので、echo request
-    をホスト2に送信します。
+    現在 host 1 知道了 host 2 的 MAC address ，因此發送 echo request 給 host 2。
 
 4. ICMP echo reply
 
-    ホスト2はホスト1のMACアドレスを既に知っているので、echo replyをホスト1
-    に返します。
+    host 2 此時也知道了 host 1 的 MAC address，因此發送 echo reply 給 host 1。
 
-このような通信が行われるはずです。
+原則上動作流程應該如同描述一般。
 
-pingコマンドを実行する前に、各ホストでどのようなパケットを受信したかを確認
-できるようにtcpdumpコマンドを実行しておきます。
+在 ping 命令執行之前，為了確認每一台 host 都可以收到，因此執行 tcpdump 以確認封包有確實被收到。
 
 host: h1:
 
@@ -960,8 +926,7 @@ host: h3:
     listening on h3-eth0, link-type EN10MB (Ethernet), capture size 65535 bytes
 
 
-それでは、最初にmnコマンドを実行したコンソールで、次のコマンドを実行して
-ホスト1からホスト2へpingを発行します。
+然後，在終端機執行 mn 命令，並從 host 1 發送 ping 到 host 2。
 
 .. rst-class:: console
 
@@ -977,9 +942,9 @@ host: h3:
     mininet>
 
 
-ICMP echo replyは正常に返ってきました。
+ICMP echo reply 正常的被回覆。
 
-まずはフローテーブルを確認してみましょう。
+再繼續之前，先確認 Flow table。
 
 switch: s1:
 
@@ -994,22 +959,18 @@ switch: s1:
      cookie=0x0, duration=48.402s, table=0, n_packets=1, n_bytes=42, priority=1,in_port=1,dl_dst=00:00:00:00:00:02 actions=output:2
     root@ryu-vm:~#
 
-Table-missフローエントリ以外に、優先度が1のフローエントリが2つ登録されて
-います。
+Table-miss Flow Entry 以外，加入兩個優先權為1的 Flow Entry。
 
-(1) 受信ポート(in_port):2, 宛先MACアドレス(dl_dst):ホスト1 →
-    動作(actions):ポート1に転送
-(2) 受信ポート(in_port):1, 宛先MACアドレス(dl_dst):ホスト2 →
-    動作(actions):ポート2に転送
+(1) 接收埠(in_port):2, 目的 MAC address (dl_dst):host 1 →
+    actions:host 1 轉送
+(2) 接收埠(in_port):1, 目的 MAC address(dl_dst):host 2 →
+    actions:host 2 轉送
 
-(1)のエントリは2回参照され(n_packets)、(2)のエントリは1回参照されています。
-(1)はホスト2からホスト1宛の通信なので、ARP replyとICMP echo replyの2つが
-マッチしたものでしょう。
-(2)はホスト1からホスト2宛の通信で、ARP requestはブロードキャストされるので、
-これはICMP echo requestによるもののはずです。
+(1)的 Flow Entry 會被 match 2次(n_packets)、(2) 的 Flow Entry 則被 match 1次。
+因為 (1) 用來讓 host 2 向 host 1 傳送封包用，ARP reply 和 ICMP echo reply 都會發生 match。
+(2) 是用來從 host 1 向 host 2 發送訊息，由於 ARP request 是採用廣播的方式，原則上透過 ICMP echo request 完成。
 
-
-それでは、simple_switch_13のログ出力を見てみます。
+然後，檢查一下 simple_switch_13 記錄檔的輸出。
 
 controller: c0:
 
@@ -1024,21 +985,15 @@ controller: c0:
     EVENT ofp_event->SimpleSwitch13 EventOFPPacketIn
     packet in 1 00:00:00:00:00:01 00:00:00:00:00:02 1
 
+第一個 Packet-In 是由 host 1 發送的 ARP request ，因為透過廣播的方式所以沒有 Flow Entry 存在，故發送 Packet-Out 。
 
-1つ目のPacket-Inは、ホスト1が発行したARP requestで、ブロードキャストなので
-フローエントリは登録されず、Packet-Outのみが発行されます。
+第二個是從 host 2 回覆的 ARP reply，目的 MAC address 為 host 1 因此前述的 Flow Entry (1) 被新增。
 
-2つ目は、ホスト2から返されたARP replyで、宛先MACアドレスがホスト1となって
-いるので前述のフローエントリ(1)が登録されます。
+第三個是從 host 1 向 host 2 發送的 ICMP echo request，因此新增 Flow Entry (2)。
 
-3つ目は、ホスト1からホスト2へ送信されたICMP echo requestで、フローエントリ
-(2)が登録されます。
+host 2 向 host 1 回覆的 ICMP echo reply 則會和 Flow Entry (1) 發生 match，故直接轉送封包至 host 1 而不需要發送 Packet-In。
 
-ホスト2からホスト1に返されたICMP echo replyは、登録済みのフローエントリ(1)
-にマッチするため、Packet-Inは発行されずにホスト1へ転送されます。
-
-
-最後に各ホストで実行したtcpdumpの出力を見てみます。
+最後，讓我們看看每一個 host 上的 tcpdump 所呈現的結果。
 
 host: h1:
 
@@ -1054,11 +1009,8 @@ host: h1:
     20:38:04.678731 00:00:00:00:00:01 > 00:00:00:00:00:02, ethertype IPv4 (0x0800), length 98: 10.0.0.1 > 10.0.0.2: ICMP echo request, id 3940, seq 1, length 64
     20:38:04.722973 00:00:00:00:00:02 > 00:00:00:00:00:01, ethertype IPv4 (0x0800), length 98: 10.0.0.2 > 10.0.0.1: ICMP echo reply, id 3940, seq 1, length 64
 
-
-ホスト1では、最初にARP requestがブロードキャストされていて、続いてホスト2から
-返されたARP replyを受信しています。
-次にホスト1が発行したICMP echo request、ホスト2から返されたICMP echo replyが
-受信されています。
+host 1 首先發送廣播 ARP request 封包，接著接收到 host 2 送來的 ARP reply 回覆。
+接著 host 1 發送 ICMP echo request，host 2 則回覆 ICMP echo reply 。
 
 host: h2:
 
@@ -1074,10 +1026,9 @@ host: h2:
     20:38:04.722601 00:00:00:00:00:01 > 00:00:00:00:00:02, ethertype IPv4 (0x0800), length 98: 10.0.0.1 > 10.0.0.2: ICMP echo request, id 3940, seq 1, length 64
     20:38:04.722747 00:00:00:00:00:02 > 00:00:00:00:00:01, ethertype IPv4 (0x0800), length 98: 10.0.0.2 > 10.0.0.1: ICMP echo reply, id 3940, seq 1, length 64
 
+對於 host 2 則是接收 host 1 發送的 ARP request 封包，接著對 host 1 發送 ARP reply 回覆。
+然後接收到 host 1 來的 ICMP echo request ，回覆 host 1 echo reply。
 
-ホスト2では、ホスト1が発行したARP requestを受信し、ホスト1にARP replyを
-返しています。続いて、ホスト1からのICMP echo requestを受信し、ホスト1に
-echo replyを返しています。
 
 host: h3:
 
@@ -1091,15 +1042,11 @@ host: h3:
     20:38:04.637954 00:00:00:00:00:01 > ff:ff:ff:ff:ff:ff, ethertype ARP (0x0806), length 42: Request who-has 10.0.0.2 tell 10.0.0.1, length 28
 
 
-ホスト3では、最初にホスト1がブロードキャストしたARP requestのみを受信
-しています。
+對 host 3 而言，僅有一開始接收到 host 1 的廣播 ARP request ，並未做其他動作。
 
 
 
-まとめ
+總結
 ------
 
-本章では、簡単なスイッチングハブの実装を題材に、Ryuアプリケーションの実装
-の基本的な手順と、OpenFlowによるOpenFlowスイッチの簡単な制御方法について
-説明しました。
-
+在本章節，以簡單的交換器安裝為題目，透過 Ryu 應用程式的基本安裝步驟和 OpenFlow 交換器的簡單操作方法進行說明。
