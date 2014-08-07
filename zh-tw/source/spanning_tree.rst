@@ -111,7 +111,7 @@ STP 會在橋接器之間交換 BPDU(Bridge Protocol Data Unit)封包，分析�
             ============== ==========
             upper 2byte    lower 2byte
             ============== ==========
-            連接埠priority  連接埠編號
+            連接埠優先權      連接埠編號
             ============== ==========
 
 
@@ -148,35 +148,24 @@ STP 會在橋接器之間交換 BPDU(Bridge Protocol Data Unit)封包，分析�
     BLOCK   僅接受 BPDU 封包
     LISTEN  可接受及傳送 BPDU 封包
     LEARN   接受及傳送 BPDU 封包以及學習 MAC
-    FORWARD 接受即算送 BPDU 封包、學習 MAC及訊框的傳送
+    FORWARD 接受及傳送 BPDU 封包、學習 MAC 及訊框的傳送
     ======= =============================================
 
 
+當這些程序在每一台橋接器開始執行之後，進行連接埠傳送封包或抑制封包的決定，如此一來便可以防止迴圈在網路拓璞中發生。
 
-これらの処理が各ブリッジで実行されることにより、フレーム転送を行うポートと
-フレーム転送を抑制するポートが決定され、ネットワーク内のループが解消されます。
-
-また、リンクダウンやBPDUパケットのmax age(デフォルト20秒)間の未受信
-による故障検出、あるいはポートの追加等によりネットワークトポロジの変更を
-検出した場合は、各ブリッジで上記の 1. 2. 3. を実行しツリーの再構築が
-行われます(STPの再計算)。
+另外，斷線或BPDU封包的最大時限(預設 20 秒)內未收到封包的故障偵測，新的連接埠加入導致網路拓璞改變。這些變化都會讓每一台橋接器執行上述1, 2 和 3 程序以建立新的樹狀拓璞(STP re-calculation)。
 
 
-
-Ryuアプリケーションの実行
+Ryu 應用程式的執行
 -------------------------
 
-スパニングツリーの機能をOpenFlowを用いて実現した、Ryuのスパニングツリー
-アプリケーションを実行してみます。
+執行 Ryu spanning tree 應用程式來達到 OpenFlow 實作的 spanning tree 的功能。
 
-Ryuのソースツリーに用意されているsimple_switch_stp.pyはOpenFlow 1.0専用
-のアプリケーションであるため、ここでは新たにOpenFlow 1.3に対応した
-simple_switch_stp_13.pyを作成することとします。このプログラムは、
-「 :ref:`ch_switching_hub` 」にスパニングツリー機能を
-追加したアプリケーションです。
+Ryu 的原始碼中 simple_switch_stp.py 是 OpenFlow 1.0 所使用，這邊我們要使用新的 OpenFlow 1.3 對應的版本 simple_switch_stp_13.py 。這個應用程式新增加了 spanning tree 功能到 「 :ref:`ch_switching_hub` 」中。
 
 
-ソース名： ``simple_switch_stp_13.py``
+原始碼檔名： ``simple_switch_stp_13.py``
 
 .. rst-class:: sourcecode
 
@@ -186,28 +175,24 @@ simple_switch_stp_13.pyを作成することとします。このプログラム
 
 
 
-実験環境の構築
+實驗環境建置
 ^^^^^^^^^^^^^^
 
-スパニングツリーアプリケーションの動作確認を行う実験環境を構築します。
+接下來確認 spanning tree 應用程式的執行動作以完成環境建置。
 
-VMイメージ利用のための環境設定やログイン方法等は「 :ref:`ch_switching_hub` 」
-を参照してください。
+VM 映像檔的使用、環境設定和登入方法等請參照「 :ref:`ch_switching_hub` 」。
 
-ループ構造を持つ特殊なトポロジで動作させるため、「 :ref:`ch_link_aggregation` 」
-と同様にトポロジ構築スクリプトによりmininet環境を構築します。
+為了使用特殊含有迴圈的環境，請參考 「 :ref:`ch_link_aggregation` 」 並使用 script 進行同樣的網路拓璞建置一個 mininet 的環境。
 
 
-ソース名： ``spanning_tree.py``
+原始碼名稱： ``spanning_tree.py``
 
 .. rst-class:: sourcecode
 
 .. literalinclude:: sources/spanning_tree.py
 
 
-VM環境でこのプログラムを実行することにより、スイッチs1、s2、s3の間でループが
-存在するトポロジが作成されます。
-
+VM 的環境執行該程式，交換器 s1 、s2、s3 之間會出現迴圈。
 
 
 .. only:: latex
@@ -228,8 +213,7 @@ VM環境でこのプログラムを実行することにより、スイッチs1�
         :scale: 50 %
 
 
-
-netコマンドの実行結果は以下の通りです。
+net 命令執行結果如下。
 
 
 .. rst-class:: console
@@ -248,11 +232,11 @@ netコマンドの実行結果は以下の通りです。
     h3 h3-eth0:s3-eth1
 
 
-OpenFlowバージョンの設定
+設定 OpenFlow 版本
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-使用するOpenFlowのバージョンを1.3に設定します。
-このコマンド入力は、スイッチs1、s2、s3のxterm上で行ってください。
+設定 OpenFlow 的版本為 1.3。
+在 xterm 終端機 s1, s2, s3 上使用命令輸入。
 
 
 Node: s1:
@@ -284,11 +268,10 @@ Node: s3:
 
 
 
-スイッチングハブの実行
+執行 switching hub
 ^^^^^^^^^^^^^^^^^^^^^^
 
-準備が整ったので、Ryuアプリケーションを実行します。ウインドウタイトルが
-「Node: c0 (root)」となっている xterm から次のコマンドを実行します。
+準備已經完成，接下來執行 Ryu 應用程式。在視窗標題為 「Node: c0 (root)」 的 xterm 執行下述的命令。
 
 
 Node: c0:
@@ -307,11 +290,10 @@ Node: c0:
     instantiating app ryu.controller.ofp_handler of OFPHandler
 
 
-OpenFlowスイッチ起動時のSTP計算
+OpenFlow 交換器啟動時的 STP 計算
 """""""""""""""""""""""""""""""
 
-各OpenFlowスイッチとコントローラの接続が完了すると、BPDUパケットの交換が
-始まり、ルートブリッジの選出・ポート役割の設定・ポート状態遷移が行われます。
+每一台 OpenFlow 交換器和 controller 的連接完成後，BPDU 封包的交換就開始了，包括　Root 橋接器的選舉、連接埠的角色、連接埠的狀態轉移。
 
 
 .. rst-class:: console
@@ -406,7 +388,7 @@ OpenFlowスイッチ起動時のSTP計算
     [STP][INFO] dpid=0000000000000001: [port=3] DESIGNATED_PORT     / FORWARD
 
 
-この結果、最終的に各ポートはFORWARD状態またはBLOCK状態となります。
+以上的結果，最後每一個連接埠分別為 FORWARD 狀態或 BLOCK 狀態。
 
 
 
@@ -429,10 +411,9 @@ OpenFlowスイッチ起動時のSTP計算
 
 
 
-パケットがループしないことを確認するため、ホスト1からホスト2へpingを実行します。
+為了確認封包不會產生迴圈現象，從 host 1 向 host 2 發送 ping 指令。
 
-pingコマンドを実行する前に、
-tcpdumpコマンドを実行しておきます。
+在 ping 命令執行之前，先執行 tcpdump 命令以確認封包的接收狀況。
 
 
 
@@ -463,8 +444,8 @@ Node: s3:
     root@ryu-vm:~# tcpdump -i s3-eth2 arp
 
 
-トポロジ構築スクリプトを実行したコンソールで、次のコマンドを実行して
-ホスト1からホスト2へpingを発行します。
+在使用 script 進行網路拓璞的建構的終端機中，進行接下來的指令，從 host 1 向 host 2 發送 ping 封包。
+
 
 
 .. rst-class:: console
@@ -489,9 +470,8 @@ Node: s3:
     11 packets transmitted, 11 received, 0% packet loss, time 9998ms
     rtt min/avg/max/mdev = 0.041/7.784/84.407/24.230 ms
 
+從 tcpdump 的結果看來，ARP 並沒有出現迴圈的狀態已被確認。
 
-tcpdumpの出力結果から、ARPがループしていないことが
-確認できます。
 
 
 Node: s1:
@@ -542,12 +522,12 @@ Node: s3:
 
 
 
-故障検出時のSTP再計算
+網路發現時重新計算STP
 """""""""""""""""""""
 
-次に、リンクダウンが起こった際のSTP再計算の動作を確認します。
-各OpenFlowスイッチ起動後のSTP計算が完了した状態で次のコマンドを実行し、
-ポートをダウンさせます。
+接下來，確認斷線發生的時候會進行 STP 的重新計算。
+在每一個 OpenFlow 交換器啟動之後、STP 的計算完成之後，執行下列指令後讓線路中斷。
+
 
 
 Node: s2:
@@ -560,7 +540,8 @@ Node: s2:
 
 
 
-リンクダウンが検出され、STP再計算が実行されます。
+斷線被偵測到的時候，STP會被重新計算。
+
 
 
 .. rst-class:: console
@@ -612,8 +593,8 @@ Node: s2:
     [STP][INFO] dpid=0000000000000002: [port=3] ROOT_PORT           / FORWARD
 
 
-これまでBLOCK状態だったs3-eth2のポートがFORWARD状態となり、
-再びフレーム転送可能な状態となったことが確認できます。
+在此之前 s3-eth2為 BLOCK 狀態，但現在連接埠的狀態為 FORWARD ，而訊框將可以再次被傳送。
+
 
 
 .. only:: latex
@@ -635,11 +616,11 @@ Node: s2:
 
 
 
-故障回復時のSTP再計算
+從線路故障的狀態回復時STP的重新計算
 """""""""""""""""""""
 
-続けて、リンクダウンが回復した際のSTP再計算の動作を確認します。
-リンクダウン中の状態で次のコマンドを実行し、ポートを起動させます。
+接下來，斷線回復的時候 STP 將被重新計算。在斷線的狀態下執行下列的命令讓連接埠恢復。
+
 
 
 Node: s2:
@@ -652,7 +633,8 @@ Node: s2:
 
 
 
-リンク復旧が検出され、STP再計算が実行されます。
+連線恢復後被測試到，STP就會進行再次的計算。
+
 
 
 .. rst-class:: console
@@ -708,9 +690,8 @@ Node: s2:
     [STP][INFO] dpid=0000000000000003: [port=2] NON_DESIGNATED_PORT / BLOCK
     [STP][INFO] dpid=0000000000000003: [port=3] ROOT_PORT           / FORWARD
 
+可以確認目前的狀態跟應用程式啟動時有相同的樹狀結構，而訊框可以再次被傳送。
 
-アプリケーション起動時と同様のツリー構成となり、再びフレーム転送可能
-な状態となったことが確認できます。
 
 
 .. only:: latex
@@ -732,91 +713,77 @@ Node: s2:
 
 
 
-OpenFlowによるスパニングツリー
+使用 OpenFlow 完成 spanning tree
 ------------------------------
 
-Ryuのスパニングツリーアプリケーションにおいて、OpenFlowを用いてどのように
-スパニングツリーの機能を実現しているかを見ていきます。
+讓我們看一下在 Ryu spanning tree 應用程式中，如何使用 OpenFlow 完成 spanning tree 的功能。
 
-OpenFlow 1.3には次のようなポートの動作を設定するコンフィグが用意されています。
-Port ModificationメッセージをOpenFlowスイッチに発行
-することで、ポートのフレーム転送有無などの動作を制御することができます。
+OpenFlow 1.3 提供 config 來設定連接埠的狀態。
+發送 Port Modification 訊息到 OpenFlow 交換器以控制連接埠對訊框的轉送行為。
+
 
 ================== =========================================================
-値                 説明
+參數值              説明
 ================== =========================================================
-OFPPC_PORT_DOWN    保守者により無効設定された状態です
-OFPPC_NO_RECV      当該ポートで受信した全てのパケットを廃棄します
-OFPPC_NO_FWD       当該ポートからパケット転送を行いません
-OFPPC_NO_PACKET_IN table-missとなった場合にPacket-Inメッセージを送信しません
+OFPPC_PORT_DOWN    連接埠無效狀態
+OFPPC_NO_RECV      丟棄所有接收到的封包
+OFPPC_NO_FWD       禁止轉送封包
+OFPPC_NO_PACKET_IN table-miss 發生時，不發送 Packet-In 訊息
 ================== =========================================================
 
 
-また、ポート状態ごとのBPDUパケット受信とBPDU以外のパケット受信を制御するため、
-BPDUパケットをPacket-InするフローエントリとBPDU以外のパケットをdropする
-フローエントリをそれぞれFlow ModメッセージによりOpenFlowスイッチに登録します。
+為了控制連接埠的接收 BPDU 封包和非 BPDU 封包，收到 BPDU 封包就發送 Packet-In 和接收 BPDU 以外的封包就丟棄的 Flow Entry 分別透過 Flow Mod 訊息新增到 OpenFlow 交換器中。
 
+controller 對各個 OpenFlow 交換器進行下面 port 設定和 Flow Entry 的管理，以達到控制連接埠狀態對於 BPDU 的接收傳送和 MAC address 的學習(BPDU 以外則是封包的接收)和訊框的轉送(BPDU 以外則是風包的傳送)。
 
-コントローラは各OpenFlowスイッチに対して、下記のようにポートコンフィグ設定と
-フローエントリ設定を行うことで、ポート状態に応じたBPDUパケットの送受信や
-MACアドレス学習(BPDU以外のパケット受信)、フレーム転送(BPDU以外のパケット送信)
-の制御を行います。
 
 
 ======= ================ ============================
-状態    ポートコンフィグ フローエントリ
+状態     連接埠設定         Flow Entry
 ======= ================ ============================
-DISABLE NO_RECV／NO_FWD  設定無し
+DISABLE NO_RECV／NO_FWD  無
 BLOCK   NO_FWD           BPDU Packet-In／BPDU以外drop
-LISTEN  設定無し         BPDU Packet-In／BPDU以外drop
-LEARN   設定無し         BPDU Packet-In／BPDU以外drop
-FORWARD 設定無し         BPDU Packet-In
+LISTEN  無               BPDU Packet-In／BPDU以外drop
+LEARN   無               BPDU Packet-In／BPDU以外drop
+FORWARD 無               BPDU Packet-In
 ======= ================ ============================
 
 
 .. NOTE::
 
-    Ryuに実装されているスパニングツリーのライブラリは、簡略化のため
-    LEARN状態でのMACアドレス学習(BPDU以外のパケット受信)を行っていません。
+    為了精簡化，Ryu 裡的 spanning tree 函式庫並不處理 LEARN 狀態的 MAC address (接收 BPDU 以外的封包) 學習。
 
-
-これらの設定に加え、コントローラはOpenFlowスイッチとの接続時に収集した
-ポート情報や各OpenFlowスイッチが受信したBPDUパケットに設定されたルートブリッジ
-の情報を元に、送信用のBPDUパケットを構築しPacket-Outメッセージを発行することで、
-OpenFlowスイッチ間のBPDUパケットの交換を実現します。
+為了做這些設定，controller 產生 BPDU 封包基於OpenFlow 交換器連接時收集的連接埠資訊和每一個 OpenFlow 交換器所接收的 BPDU 封包中所設定的 Root 橋接器資訊，發送 Packet-Out 訊息，達到交換器之間互相交換 BPDU 的效果。
 
 
 
-Ryuによるスパニングツリーの実装
+使用 Ryu 實作 spanning tree
 -------------------------------
 
-続いて、Ryuを用いて実装されたスパニングツリーのソースコードを見ていきます。
-スパニングツリーのソースコードは、Ryuのソースツリーにあります。
+接下來，檢視一下 Ryu 所用來實作 spanning tree 的原始碼。
+spanning tree 的原始碼存放在 Ryu 的原始碼當中。
 
     ryu/lib/stplib.py
 
     ryu/app/simple_switch_stp.py
 
 
-stplib.pyはBPDUパケットの交換や各ポートの役割・状態の管理などの
-スパニングツリー機能を提供するライブラリです。
-simple_switch_stp.pyはスパニングツリーライブラリを適用することで
-スイッチングハブのアプリケーションにスパニングツリー機能を追加した
-アプリケーションプログラムです。
+stplib.py 是用來提供 BPDU 封包的交換和連接埠的角色、狀態管理的 spanning tree 函式庫。
+simple_switch_stp.py 是一個應用程式來讓交換器的應用程式新增 spanning tree 函式庫以增加 spanning tree 功能使用。
+
 
 .. ATTENTION::
 
-    simple_switch_stp.pyはOpenFlow 1.0専用のアプリケーション
-    であるため、本章では「 `Ryuアプリケーションの実行`_ 」に示した
-    OpenFlow 1.3に対応したsimple_switch_stp_13.pyを元にアプリケーションの
-    詳細を説明します。
+    因為 simple_switch_stp.py 是 OpenFlow 1.0 專用的應用程式，
+    本章為 「 `執行 Ryu 應用程式`_ 」因此使用 OpenFlow 1.3 所對應的 simple_switch_stp_13.py
+    作為詳細說明的目標。
 
 
 
-ライブラリの実装
+函式庫的安裝
 ^^^^^^^^^^^^^^^^
 
-ライブラリ概要
+函式庫概述
 """"""""""""""
 
 .. only:: latex
@@ -837,60 +804,54 @@ simple_switch_stp.pyはスパニングツリーライブラリを適用するこ
         :align: center
 
 
+STP 函式庫(STP 實體)為 OpenFlow 交換器的 controller 發現已經連結時， Bridge 類別的實體和 Port 類別的實體就會被產生。當每一個類別的實體產生、啟動之後。
 
-STPライブラリ(Stpクラスインスタンス)がOpenFlowスイッチのコントローラ
-への接続を検出すると、Bridgeクラスインスタンス・Portクラスインスタンスが
-生成されます。各クラスインスタンスが生成・起動された後は、
+* 從 stp 類別實體接收到 OpenFlow 訊息。
+* Bridge 類別實體運算 STP(Root 橋接器的選擇，每一個連接埠的角色選擇)
+* Port 類別實體的狀態變化，BPDU封包接收及傳送
 
-* StpクラスインスタンスからのOpenFlowメッセージ受信通知
-* BridgeクラスインスタンスのSTP計算(ルートブリッジ選択・各ポートの役割選択)
-* Portクラスインスタンスのポート状態遷移・BPDUパケット送受信
-
-が連動し、スパニングツリー機能を実現します。
+以上動作完成後，即可達成 spanning tree 的功能。
 
 
 
-コンフィグ設定項目
+設定項目
 """"""""""""""""""
 
-STPライブラリは ``Stp.set_config()`` メソッドによりブリッジ・ポートの
-コンフィグ設定IFを提供します。設定可能な項目は以下の通りです。
+如果使用 ``Stp.set_config()`` 方法，則 STP 函式庫有提供橋接器連接埠的設定項目。
+可用的設定項目如下：
 
 
 * bridge
 
     ================ =================================================== ============
-    項目             説明                                                デフォルト値
+    項目             説明                                                  預設值
     ================ =================================================== ============
-     ``priority``    ブリッジ優先度                                      0x8000
-     ``sys_ext_id``  VLAN-IDを設定 (\*現状のSTPライブラリはVLAN未対応)   0
-     ``max_age``     BPDUパケットの受信待ちタイマー値                    20[sec]
-     ``hello_time``  BPDUパケットの送信間隔                              2 [sec]
-     ``fwd_delay``   各ポートがLISTEN状態およびLEARN状態に留まる時間     15[sec]
+     ``priority``    橋接器優先權                                           0x8000
+     ``sys_ext_id``  設定 VLAN-ID (\*目前的 STP 函式庫不支援 VLAN)            0
+     ``max_age``     BPDU 封包的傳送接收逾時                                 20[sec]
+     ``hello_time``  BPDU 封包的傳送接收間隔                                 2 [sec]
+     ``fwd_delay``   每一個連接埠停留在 LISTEN 或 LEARN 的時間                 15[sec]
     ================ =================================================== ============
 
 
 * port
 
     =============== ==================== ============================
-    項目            説明                 デフォルト値
+    項目            説明                   預設值
     =============== ==================== ============================
-     ``priority``   ポート優先度         0x80
-     ``path_cost``  リンクのコスト値     リンクスピードを元に自動設定
-     ``enable``     ポートの有効無効設定 True
+     ``priority``   連接埠優先權            0x80
+     ``path_cost``  Link Cost            基於連線速度自動設定
+     ``enable``     連接埠的啟用/停用        True
     =============== ==================== ============================
 
 
 
-BPDUパケット送信
+傳送 BPDU 封包
 """"""""""""""""
 
-BPDUパケット送信はPortクラスのBPDUパケット送信スレッド
-( ``Port.send_bpdu_thread`` )で行っています。ポートの役割が指定ポート
-( ``DESIGNATED_PORT`` )の場合、ルートブリッジから通知されたhello time
-( ``Port.port_times.hello_time`` ：デフォルト2秒)間隔でBPDUパケット生成
-( ``Port._generate_config_bpdu()`` )およびBPDUパケット送信
-( ``Port.ofctl.send_packet_out()`` )を行います。
+傳送 BPDU 封包的動作為 BPDU 風包傳送執行緒 ( ``Port.send_bpdu_thread`` ) 所執行，
+當連接埠的角色為 designated port ( ``DESIGNATED_PORT`` ) 時，定期通知 Root 橋接器的 hello time ( ``Port.port_times.hello_time`` ：預設2秒) 封包就會被產生( ``Port._generate_config_bpdu()`` )並進行傳送( ``Port.ofctl.send_packet_out()`` )。
+
 
 
 .. rst-class:: sourcecode
@@ -924,11 +885,8 @@ BPDUパケット送信はPortクラスのBPDUパケット送信スレッド
 
                 hub.sleep(self.port_times.hello_time)
 
+即將被傳頌的 BPDU 封包所設定的內容會來自 OpenFlow 交換器與 controller 連接時所收集到的連接埠資訊( ``Port.ofport`` )和曾經接受到的 BPDU 封包中 Root 橋接器的資訊( ``Port.port_priority、Port.port_times`` )。
 
-送信するBPDUパケットは、OpenFlowスイッチのコントローラ接続時に収集した
-ポート情報( ``Port.ofport`` )や受信したBPDUパケットに設定された
-ルートブリッジ情報( ``Port.port_priority、Port.port_times`` )などを元に
-構築されます。
 
 
 .. rst-class:: sourcecode
@@ -968,18 +926,14 @@ BPDUパケット送信はPortクラスのBPDUパケット送信スレッド
             return pkt.data
 
 
-BPDUパケット受信
+接收 BPDU 封包
 """"""""""""""""
 
-BPDUパケットの受信は、StpクラスのPacket-Inイベントハンドラによって検出され、
-Bridgeクラスインスタンスを経由してPortクラスインスタンスに通知されます。
-イベントハンドラの実装は「 :ref:`ch_switching_hub` 」を参照してください。
+接收 BPDU 封包是由 STP 類別的 Packet-In 事件管理器 (Event handler) 所發現， 經由 Bridge 類別實體通知給 Port 類別實體。事件管理器的實作請參考 「 :ref:`ch_switching_hub` 」。
 
-BPDUパケットを受信したポートは、以前に受信したBPDUパケットと今回受信した
-BPDUパケットのブリッジIDなどの比較( ``Stp.compare_bpdu_info()`` )を行い、
-STP再計算の要否判定を行います。以前に受信したBPDUより優れたBPDU( ``SUPERIOR`` )
-を受信した場合、「新たなルートブリッジが追加された」などのネットワーク
-トポロジ変更が発生したことを意味するため、STP再計算の契機となります。
+接收到 BPDU 封包的連接埠會對先前接收到的 BPDU 封包以及本次接收到的封包中的橋接器ID進行比對 ( ``Stp.compare_bpdu_info()`` ) ，來決定 STP 是否必須重新計算路徑。
+若是相比之前的封包之下，本次收到的封包為優先封包(superior BPDU) (``SUPERIOR``) 時，則代表網路的拓璞已經改變，例如”一個新的 Root 橋接器已經被加入網路”，此時則必須開始進行 STP 的重新計算。
+
 
 
 .. rst-class:: sourcecode
@@ -1018,28 +972,21 @@ STP再計算の要否判定を行います。以前に受信したBPDUより優�
 
 
 
-故障検出
+故障偵測
 """"""""
 
-リンク断などの直接故障や、一定時間ルートブリッジからのBPDUパケットを
-受信できない間接故障を検出した場合も、STP再計算の契機となります。
+直接的故障例如斷線，或者間接的故障例如在一定時間內沒有接收到 Root 橋接器所發出的 BPDU 封包時，STP 就必須進行重新計算。
 
-リンク断はStpクラスのPortStatusイベントハンドラによって検出し、Bridgeクラス
-インスタンスへ通知されます。
+斷線是由 STP 類別的 PortStatus 事件管理所發現，並透過 Bridge 類別的實體進行通知。
 
-BPDUパケットの受信待ちタイムアウトはPortクラスのBPDUパケット受信待ちスレッド
-( ``Port.wait_bpdu_thread`` )で検出します。max age(デフォルト20秒)間、
-ルートブリッジからのBPDUパケットを受信できない場合に間接故障と判断し、
-Bridgeクラスインスタンスへ通知されます。
+BPDU 封包的接收逾時是由 Port 類別的 BPDU 封包接收執行緒( ``Port.wait_bpdu_thread`` )所發現。
+在 max age (預設20秒) 之間，如果沒有接收到 Root 橋接器發來的 BPDU 封包，就判斷為間接故障，並且對 Bridge 類別實體發送通知。
 
-BPDU受信待ちタイマーの更新とタイムアウトの検出にはhubモジュール(ryu.lib.hub)
-の ``hub.Event`` と ``hub.Timeout`` を用います。 ``hub.Event`` は
-``hub.Event.wait()`` でwait状態に入り ``hub.Event.set()`` が実行されるまで
-スレッドが中断されます。 ``hub.Timeout`` は指定されたタイムアウト時間内に
-``try`` 節の処理が終了しない場合、 ``hub.Timeout`` 例外を発行します。
-``hub.Event`` がwait状態に入り ``hub.Timeout`` で指定されたタイムアウト時間内に
-``hub.Event.set()`` が実行されない場合に、BPDUパケットの受信待ちタイムアウト
-と判断しBridgeクラスのSTP再計算処理を呼び出します。
+BPDU 接收逾時的更新和逾時的偵測分別是 hub 模組(ryu.lib.hub) 的 ``hub.Event`` 和 ``hub.Timeout``。
+``hub.Event`` 經由 ``hub.Event.wait()`` 進入 wait 狀態，透過 ``hub.Event.set()`` 中斷執行緒。
+``hub.Timeout`` 指定在一定時間內若 ``try`` 無法結束執行時，則發送 ``hub.Timeout`` 的例外事件。
+當 ``hub.Event`` 進入 wait 狀態，並且 ``hub.Timeout`` 所指定的時間內尚未執行 ``hub.Event.set()`` 時，則判斷為 BPDU 封包的接收逾時，故開始進行 Bridge 類別的 STP 重新計算。
+
 
 
 .. rst-class:: sourcecode
@@ -1087,15 +1034,9 @@ BPDU受信待ちタイマーの更新とタイムアウトの検出にはhubモ�
                 hub.spawn(self.wait_bpdu_timeout)
 
 
-受信したBPDUパケットの比較処理( ``Stp.compare_bpdu_info()`` )により
-``SUPERIOR`` または ``REPEATED`` と判定された場合は、ルートブリッジからの
-BPDUパケットが受信出来ていることを意味するため、BPDU受信待ちタイマーの更新
-( ``Port._update_wait_bpdu_timer()`` )を行います。 ``hub.Event`` である
-``Port.wait_timer_event`` の ``set()`` 処理により ``Port.wait_timer_event``
-はwait状態から解放され、BPDUパケット受信待ちスレッド( ``Port.wait_bpdu_thread`` )
-は ``except hub.Timeout`` 節のタイムアウト処理に入ることなくタイマーを
-キャンセルし、改めてタイマーをセットし直すことで次のBPDUパケットの受信待ち
-を開始します。
+接收的 BPDU 封包比對動作 ( ``Stp.compare_bpdu_info()`` ) 結束後發現是 ``SUPERIOR`` 或 ``REPEATED`` 時，就開始接收 Root 橋接器發送過來的封包，並且更新逾時數值( ``Port._update_wait_bpdu_timer()`` )。
+執行 ``hub.Event`` 中 ``Port.wait_timer_event`` 的 ``set()`` 將 ``Port.wait_timer_event`` 從 wait 狀態解除，即可讓 BPDU 封包接收執行緒( ``Port.wait_bpdu_thread`` ) 不要進入 ``except hub.Timeout`` 的區間並處理，而重新設定計時器後繼續的接收下一個 BPDU 封包。
+
 
 
 .. rst-class:: sourcecode
@@ -1125,19 +1066,15 @@ BPDUパケットが受信出来ていることを意味するため、BPDU受信
                 self.wait_timer_event = None
 
 
-STP計算
+STP 計算
 """""""
 
-STP計算(ルートブリッジ選択・各ポートの役割選択)はBridgeクラスで実行します。
+STP 計算(Root 橋接器選擇、每一個連接埠的角色選擇) 是由 Bridge 類別所執行。
 
-STP計算が実行されるケースではネットワークトポロジの変更が発生しており
-パケットがループする可能性があるため、一旦全てのポートをBLOCK状態に設定
-( ``port.down`` )し、かつトポロジ変更イベント( ``EventTopologyChange`` )
-を上位APLに対して通知することで学習済みのMACアドレス情報の初期化を促します。
+STP重新計算開始的時候代表網路拓璞已經發生變化，此時封包的傳遞有可能會有出現迴圈，此時所有的連接埠會進入 BLOCK ( ``port.down`` ) 狀態，觸發拓璞改變事件( ``EventTopologyChange`` ) 通知上層 APL 並初始已經學習MAC address 完畢的連接埠。
 
-その後、 ``Bridge._spanning_tree_algorithm()`` でルートブリッジとポートの
-役割を選択した上で、各ポートをLISTEN状態で起動( ``port.up`` )しポートの
-状態遷移を開始します。
+然後，``Bridge._spanning_tree_algorithm()`` 開始動作以進行 Root 橋接器的選擇和連接埠的角色設定，所有的連接埠從 LISTEN 狀態( ``port.up`` )開始狀態的變化。
+
 
 
 .. rst-class:: sourcecode
@@ -1177,18 +1114,12 @@ STP計算が実行されるケースではネットワークトポロジの変�
                     self.ports[port_no].up(role, self.root_priority,
                                            self.root_times)
 
+為了 Root 橋接器的選擇，像是橋接器ID之類的資訊會拿來跟每一個連接埠所接收到的 BPDU 封包進行比對( ``Bridge._select_root_port`` )。
 
-ルートブリッジの選出のため、ブリッジIDなどの自身のブリッジ情報と
-各ポートが受信したBPDUパケットに設定された他ブリッジ情報を比較します
-( ``Bridge._select_root_port`` )。
+接著會出現這樣的結果，出現 Root 連接埠(本身的橋接器資訊和從連接埠所收到的其他橋接器資訊比對後較差)，
+其他的橋接器開始作為 Root 橋接器或選出 designated ports (``Bridge._select_designated_port``) 和選出 non-designated ports (Root 連接埠/designated ports 以外的 non-designated ports 選出)。
 
-この結果、ルートポートが見つかった場合(自身のブリッジ情報よりもポートが
-受信した他ブリッジ情報が優れていた場合)、他ブリッジがルートブリッジであると
-判断し指定ポートの選出( ``Bridge._select_designated_port`` )と非指定ポート
-の選出(ルートポート／指定ポート以外のポートを非指定ポートとして選出)を行います。
-
-一方、ルートポートが見つからなかった場合(自身のブリッジ情報が最も優れていた場合)は
-自身をルートブリッジと判断し各ポートは全て指定ポートとなります。
+反之，Root 橋接器如果沒有被發現(本身的橋接器所帶的資訊為最優先的情況)，則本身就會轉變為 Root 橋接器並設定其所有的連接埠為 designated ports。
 
 
 
@@ -1240,16 +1171,13 @@ STP計算が実行されるケースではネットワークトポロジの変�
 
 
 
-ポート状態遷移
+連接埠的狀態轉移
 """"""""""""""
 
-ポートの状態遷移処理は、Portクラスの状態遷移制御スレッド( ``Port.state_machine`` )
-で実行しています。次の状態に遷移するまでのタイマーを ``Port._get_timer()`` で
-取得し、タイマー満了後に ``Port._get_next_state()`` で次状態を取得し、
-状態遷移を行います。また、STP再計算が発生しこれまでのポート状態に関係無く
-BLOCK状態に遷移させるケースなど、 ``Port._change_status()`` が実行された場合
-にも状態遷移が行われます。これらの処理は「 `故障検出`_ 」と同様に
-hubモジュールの ``hub.Event`` と ``hub.Timeout`` を用いて実現しています。
+連接埠的狀態轉移是由 Port 類別的狀態轉移控制執行緒( ``Port.state_machine`` )所處理。
+下一個狀態的轉移時限是從 ``Port._get_timer()`` 取得。當時限已經逾時之後就會從 ``Port._get_next_state()`` 取得接下來將轉移的狀態，並進行移轉。
+而且，STP再次重新計算的時候，連接埠的狀態就會直接使用 ``Port._change_status()`` 切換至 BLOCK 的狀態，不論先前的狀態為何。這樣的處理跟  `故障偵測`_ 」一樣，是由 hub 模組的 ``hub.Event`` 和 ``hub.Timeout`` 來達成。
+
 
 
 .. rst-class:: sourcecode
@@ -1310,19 +1238,17 @@ hubモジュールの ``hub.Event`` と ``hub.Timeout`` を用いて実現して
 
 
 
-アプリケーションの実装
+應用程式的實作
 ^^^^^^^^^^^^^^^^^^^^^^
 
-「 `Ryuアプリケーションの実行`_ 」に示したOpenFlow 1.3対応のスパニングツリー
-アプリケーション(simple_switch_stp_13.py)と、「 :ref:`ch_switching_hub` 」
-のスイッチングハブとの差異を順に説明していきます。
+本章說明 「 `Ryu應用程式執行`_ 」中 OpenFlow 1.3 所對應的 spanning tree 應用程式(simple_switch_stp_13.py) 和 「 :ref:`ch_switching_hub` 」 的交換器之間的差異。
 
 
-「_CONTEXTS」の設定
+
+設定「_CONTEXTS」
 """""""""""""""""""
 
-「 :ref:`ch_link_aggregation` 」と同様にSTPライブラリを利用するため
-CONTEXTを登録します。
+跟 「 :ref:`ch_link_aggregation` 」 用 CONTEXT 登錄以應用相同的 STP 函式庫。
 
 
 .. rst-class:: sourcecode
@@ -1340,22 +1266,21 @@ CONTEXTを登録します。
         # ...
 
 
-コンフィグ設定
+設定組態
 """"""""""""""
 
-STPライブラリの ``set_config()`` メソッドを用いてコンフィグ設定を行います。
-ここではサンプルとして、以下の値を設定します。
+使用 STP 函式庫的 ``set_config()`` 方法來進行組態設定，下面是幾單的例子。
+
 
 ===================== =============== ======
-OpenFlowスイッチ      項目            設定値
+OpenFlow交換器         名稱             設定値
 ===================== =============== ======
 dpid=0000000000000001 bridge.priority 0x8000
 dpid=0000000000000002 bridge.priority 0x9000
 dpid=0000000000000003 bridge.priority 0xa000
 ===================== =============== ======
 
-この設定によりdpid=0000000000000001のOpenFlowスイッチのブリッジIDが
-常に最小の値となり、ルートブリッジに選択されることになります。
+使用這個設定時 dpid=0000000000000001 的 OpenFlow 交換器的橋接器ID總會是最小值，而 Root 橋接器也會選擇該交換器。
 
 
 .. rst-class:: sourcecode
@@ -1382,17 +1307,13 @@ dpid=0000000000000003 bridge.priority 0xa000
             self.stp.set_config(config)
 
 
-STPイベント処理
+STP 事件處理
 """""""""""""""
 
-「 :ref:`ch_link_aggregation` 」と同様にSTPライブラリから通知される
-イベントを受信するイベントハンドラを用意します。
+跟 「 :ref:`ch_link_aggregation` 」 一樣準備事件管理來接收來自 STP 函式庫的通知。 
 
-
-
-STPライブラリで定義された ``stplib.EventPacketIn`` イベントを利用することで、
-BPDUパケットを除いたパケットを受信することが出来るため、
-「 :ref:`ch_switching_hub` 」と同様のパケットハンドリンクを行います。
+使用 STP 函式庫中定義的 ``stplib.EventPacketIn`` 事件來接收 BPDU 以外的封包。
+因此相同的封包管理及處理動作跟 「 :ref:`ch_switching_hub` 」 相同。
 
     .. rst-class:: sourcecode
 
@@ -1405,9 +1326,8 @@ BPDUパケットを除いたパケットを受信することが出来るため�
 
                 # ...
 
+接收網路拓璞的變動事件通知 ( ``stplib.EventTopologyChange`` ) 初始化已經學習 MAC address 和已經註冊了 的 Flow Entry 。
 
-ネットワークトポロジの変更通知イベント( ``stplib.EventTopologyChange`` )を
-受け取り、学習したMACアドレスおよび登録済みのフローエントリを初期化しています。
 
 
     .. rst-class:: sourcecode
@@ -1442,8 +1362,8 @@ BPDUパケットを除いたパケットを受信することが出来るため�
                     del self.mac_to_port[dp.id]
 
 
-ポート状態の変更通知イベント( ``stplib.EventPortStateChange`` )を受け取り、
-ポート状態のデバッグログ出力を行っています。
+接收到連接埠的狀態通知事件( ``stplib.EventPortStateChange`` )並且將連接埠的狀態輸出。
+
 
     .. rst-class:: sourcecode
 
@@ -1464,17 +1384,14 @@ BPDUパケットを除いたパケットを受信することが出来るため�
 
 
 
-以上のように、スパニングツリー機能を提供するライブラリと、ライブラリを
-利用するアプリケーションによって、スパニングツリー機能を持つスイッチングハブの
-アプリケーションを実現しています。
+經過以上的處理，透過提供 spanning tree 功能的函式庫和使用該函式庫的應用程式，實作了擁有 spanning tree 功能的交換器應用程式。
 
 
 
-まとめ
+總結
 ------
 
-本章では、スパニングツリーライブラリの利用を題材として、以下の項目に
-ついて説明しました。
+本章透過 spanning tree 函式庫的使用，說明下列的目標。
 
-* hub.Eventを用いたイベント待ち合わせ処理の実現方法
-* hub.Timeoutを用いたタイマー制御処理の実現方法
+* 使用 hub.Event 實作事件等待處理
+* 使用 hub.Timeout 實作逾時管理
