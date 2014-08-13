@@ -11,11 +11,9 @@ Link Aggregation
 ------------------------
 
 link aggregation 是由 IEEE802.1AX-2008 所制定的，多條實體線路合併為一個邏輯線路。
+透過本功能可以讓網路中特定的裝置間通訊速度提升，同時確保備援能力提升容錯的功能。
 
-リンク・アグリゲーションは、IEEE802.1AX-2008で規定されている、複数の物理的な
-回線を束ねてひとつの論理的なリンクとして扱う技術です。リンク・アグリゲーション
-機能により、特定のネットワーク機器間の通信速度を向上させることができ、また同時
-に、冗長性を確保することで耐障害性を向上させることができます。
+
 
 .. only:: latex
 
@@ -34,54 +32,47 @@ link aggregation 是由 IEEE802.1AX-2008 所制定的，多條實體線路合併
      :scale: 40%
      :align: center
 
-リンク・アグリゲーション機能を使用するには、それぞれのネットワーク機器において、
-どのインターフェースをどのグループとして束ねるのかという設定を事前に行っておく
-必要があります。
+在使用 link aggregation 功能之前，個別的網路裝置上哪一個界面歸屬于哪一個群組都必須先設定完成。
 
-リンク・アグリゲーション機能を開始する方法には、それぞれのネットワーク機器に
-対し直接指示を行うスタティックな方法と、LACP
-(Link Aggregation Control Protocol)というプロトコルを使用することによって
-動的に開始させるダイナミックな方法があります。
+起始 link aggregation 功能的方法是將個別的網路裝置設置完成，此為靜態方法。
+另外也可以使用 LACP (Link Aggregation Control Protocol) 通訊協定，此為動態方法。
 
-ダイナミックな方法を採用した場合、各ネットワーク機器は対向インターフェース同
-士でLACPデータユニットを定期的に交換することにより、疎通不可能になっていない
-ことをお互いに確認し続けます。LACPデータユニットの交換が途絶えた場合、故障が
-発生したものとみなされ、当該ネットワーク機器は使用不可能となり、パケットの送
-受信は残りのインターフェースによってのみ行われるようになります。この方法には、
-ネットワーク機器間にメディアコンバータなどの中継装置が存在した場合にも、中継
-装置の向こう側のリンクダウンを検知することができるというメリットがあります。
-本章では、LACPを用いたダイナミックなリンク・アグリゲーション機能を取り扱いま
-す。
+採用動態方法的時候，每一個網路裝置所相對應的界面會定期的進行 LACP data unit 交換以確認彼此之間的通訊狀況。
+當 LACP data unit 的交換無法完成，代表網路已經出現故障，使用該網路的裝置出現通訊中斷，
+此時封包的傳送僅能使用殘存的界面和線路完成。
+
+在採用了動態的方法情況下，每一個網路裝置所對應的界面會定期的交換 LACP data unit，以確認相互間通訊的狀態。
+當 LACP data unit 無法傳送或接收的時候，則代表裝置間的連接出現了問題，網路處於無法使用的狀態。
+此時可以交換封包的僅剩下那些尚未中斷網路的殘存線路。
+這樣的做法有個優點，即當有個轉送裝置存在于網路之中，例如 meida converter，就可以知道當該裝置的另外一端也斷線時可以被偵測到。本章將會說明使用 LACP 進行動態的 link aggregation 設置。
 
 
-Ryuアプリケーションの実行
+
+執行 Ryu 應用程式
 -------------------------
 
-ソースの説明は後回しにして、まずはRyuのリンク・アグリゲーション・アプリケー
-ションを実行してみます。
+原始碼的解說將放到後面，首先式 Ryu 的 link aggregation 應用程式的執行。
 
-Ryuのソースツリーに用意されているsimple_switch_lacp.pyはOpenFlow 1.0専用
-のアプリケーションであるため、ここでは新たにOpenFlow 1.3に対応した
-simple_switch_lacp_13.pyを作成することとします。このプログラムは、
-「 :ref:`ch_switching_hub` 」のスイッチングハブにリンク・アグリゲーション機能を
-追加したアプリケーションです。
+simple_switch_lacp.py 為 OpenFlow 1.0 專用的應用程式並存在于 Ryu 的原始碼中。
+在這邊我們要建立新的 OpenFlow 1.3 版本，即 simple_switch_lacp_13.py。
+此應用程式為「 :ref:`ch_switching_hub` 」中交換器新增 link aggregation 功能。
 
-ソース名： ``simple_switch_lacp_13.py``
+``
+原始碼名稱： ``simple_switch_lacp_13.py``
 
 .. rst-class:: sourcecode
 
 .. literalinclude:: sources/simple_switch_lacp_13.py
 
 
-実験環境の構築
+實驗環境的建置
 ^^^^^^^^^^^^^^
 
-OpenFlowスイッチとLinuxホストの間でリンク・アグリゲーションを構成してみましょう。
+讓我們來看一下 OpenFlow 交換器和 Linux host 之間的 link aggregation 。
 
-VMイメージ利用のための環境設定やログイン方法等は「 :ref:`ch_switching_hub` 」
-を参照してください。
+為了使用 VM 映像檔，詳細的環境設定和登入方法等請參考 「 :ref:`ch_switching_hub` 」。
 
-最初にMininetを利用して下図の様なトポロジを作成します。
+首先使用 Mininet 製作出如下一般的網路拓璞。
 
 .. only:: latex
 
@@ -100,18 +91,16 @@ VMイメージ利用のための環境設定やログイン方法等は「 :ref:
       :scale: 40%
       :align: center
 
-MininetのAPIを呼び出すスクリプトを作成し、必要なトポロジを構築
-します。
+使用 script 來呼叫 Mininet 的 API 進而完成網路拓璞的建構。
 
-ソース名： ``link_aggregation.py``
+
+原始碼名稱： ``link_aggregation.py``
 
 .. rst-class:: sourcecode
 
 .. literalinclude:: sources/link_aggregation.py
 
-このスクリプトを実行することにより、ホストh1とスイッチs1の間に2本のリンクが
-存在するトポロジが作成されます。netコマンドで作成されたトポロジを確認す
-ることができます。
+執行該 script 後會形成 host 1 和交換器 s1 之間有兩條連線的拓璞結構。這時可以使用 net 命令來進行確認。
 
 .. rst-class:: console
 
@@ -129,19 +118,19 @@ MininetのAPIを呼び出すスクリプトを作成し、必要なトポロジ�
     mininet>
 
 
-ホストh1でのリンク・アグリゲーションの設定
+host h1 的 link aggregation 設定
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-ホストh1のLinuxに必要な事前設定を行いましょう。
-本節
-でのコマンド入力は、ホストh1のxterm上で行ってください。
+在這之前 host h1 的 Linux 作業系統中必須先行設定。
 
-まず、リンク・アグリゲーションを行うためのドライバモジュールをロードします。
-Linuxではリンク・アグリゲーション機能をボンディングドライバが担当しています。
-事前にドライバの設定ファイルを/etc/modprobe.d/bonding.confとして作成してお
-きます。
+請輸入本節的命令在 host h1 的 xterm 終端機之中。
 
-ファイル名: ``/etc/modprobe.d/bonding.conf``
+首先，載入 drive module 以完成 link aggregation 。
+在 Linux 之中，link aggregation 功能是由 bonding drive 所處理。
+預先建立 drive 的設定檔 /etc/modprobe.d/bonding.conf 以完成該功能。
+
+
+檔案名稱: ``/etc/modprobe.d/bonding.conf``
 
 .. rst-class:: sourcecode
 
@@ -158,13 +147,10 @@ Node: h1:
 
     root@ryu-vm:~# modprobe bonding
 
-mode=4はLACPを用いたダイナミックなリンク・アグリゲーションを行うことを表しま
-す。デフォルト値であるためここでは設定を省略していますが、LACPデータユニット
-の交換間隔はSLOW（30秒間隔）、振り分けロジックは宛先MACアドレスを元に行うよ
-うに設定されています。
+mode=4 是 LACP 中代表使用 dynamic link aggregation。
+由於是預設值的關係，這邊可以省略。而 LACP data unit 的交換間隔為 SLOW (30秒)，並且排序的方式是使用目標 MAC address 來進行。
 
-続いて、bond0という名前の論理インターフェースを新たに作成します。また、bond0
-のMACアドレスとして適当な値を設定します。
+接著，建立一個名為 bond0 的邏輯界面。然後設 bond0 的 MAC address。
 
 Node: h1:
 
@@ -175,10 +161,9 @@ Node: h1:
     root@ryu-vm:~# ip link add bond0 type bond
     root@ryu-vm:~# ip link set bond0 address 02:01:02:03:04:08
 
-作成した論理インターフェースのグループに、h1-eth0とh1-eth1の物理インター
-フェースを参加させます。このとき、物理インターフェースをダウンさせておく必要
-があります。また、ランダムに決定された物理インターフェースのMACアドレスを
-わかりやすい値に書き換えておきます。
+把 h1-eth0 和 h1-eth1 的實體網路界面加到建立好的邏輯界面群組中。此時，先將實體界面設定為 down，然後亂數決定該實體界面較為簡單的 MAC address 並更新。
+
+
 
 Node: h1:
 
@@ -193,9 +178,10 @@ Node: h1:
     root@ryu-vm:~# ip link set h1-eth1 address 00:00:00:00:00:12
     root@ryu-vm:~# ip link set h1-eth1 master bond0
 
-論理インターフェースにIPアドレスを割り当てます。
-ここでは10.0.0.1を割り当てることにします。また、h1-eth0にIPアドレス
-が割り当てられているので、これを削除します。
+指定邏輯界面的 IP address。
+這邊是指定為 10.0.0.1。由於 h1-eth0 的 IP address 已經被指定所以我們刪除它。
+
+
 
 Node: h1:
 
@@ -206,7 +192,9 @@ Node: h1:
     root@ryu-vm:~# ip addr add 10.0.0.1/8 dev bond0
     root@ryu-vm:~# ip addr del 10.0.0.1/8 dev h1-eth0
 
-最後に、論理インターフェースをアップさせます。
+最後，設定邏輯界面為 UP。
+
+
 
 Node: h1:
 
@@ -216,7 +204,9 @@ Node: h1:
 
     root@ryu-vm:~# ip link set bond0 up
 
-ここで各インターフェースの状態を確認しておきます。
+接著確認每一個界面的狀態。
+
+
 
 Node: h1:
 
@@ -255,11 +245,10 @@ Node: h1:
               collisions:0 txqueuelen:0
               RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
 
-論理インターフェースbond0がMASTERに、物理インターフェースh1-eth0とh1-eth1が
-SLAVEになっていることがわかります。また、bond0、h1-eth0、h1-eth1のMACアドレ
-スがすべて同じものになっていることがわかります。
+邏輯界面 bond0 為 MASTER，實體界面 h1-eth0 和 h1-eth1 為 SLAVE。
+而且，你可以看到 bond0、h1-eth0 和 h1-eth1 的 MAC address 全部都是相同的。
 
-ボンディングドライバの状態も確認しておきます。
+確認 bonding driver 的狀態。
 
 Node: h1:
 
@@ -306,19 +295,18 @@ Node: h1:
     Aggregator ID: 2
     Slave queue ID: 0
 
-LACPデータユニットの交換間隔(LACP rate: slow)や振り分けロジックの設定
-(Transmit Hash Policy: layer2 (0))が確認できます。また、物理インター
-フェースh1-eth0とh1-eth1のMACアドレスが確認できます。
+確認 LACP data unit 的交換間隔(LACP rate: slow) 和排序邏輯的設定(Transmit Hash Policy: layer2 (0))。
+必且確認實體界面 h1-eth0 和 h1-eth1 的 MAC addresss。
 
-以上でホストh1への事前設定は終了です。
+以上為 host h1 的事前準備。
 
 
-OpenFlowバージョンの設定
+設定 OpenFlow 版本
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-スイッチs1のOpenFlowの
-バージョンを1.3に設定します。このコマンド入力は、スイッチs1のxterm上で行っ
-てください。
+交換器 s1 的 OpenFlow 版本設定為 1.3。請在交換器s1的 xterm 終端機上輸入下面的指令。
+
+
 
 Node: s1:
 
@@ -329,7 +317,7 @@ Node: s1:
     root@ryu-vm:~# ovs-vsctl set Bridge s1 protocols=OpenFlow13
 
 
-スイッチングハブの実行
+執行交換器
 ^^^^^^^^^^^^^^^^^^^^^^
 
 準備が整ったので、冒頭で作成したRyuアプリケーションを実行します。
