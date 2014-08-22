@@ -817,7 +817,7 @@ ports
 
 
 Packet-In 的處理
-"""""""""""""
+""""""""""""""""""""""""""
 
 在「 :ref:`ch_switching_hub` 」中，目的 MAC address 尚未被學習的狀況下，會將接收到的封包進行 Flooding。
 由於 LACP data unit 僅會在相鄰的網路間進行交換，若是將該封包轉送至其他的網路時 link aggregation 將會出現異常。所以就進行這樣的處理「若是接收到 Packet-In 來自 LACP data unit 的封包就阻止，LACP data unit 以外的封包就交給交換器繼續後續的動作」，在這樣的操作下 LACP data unit 就會不會出現在交換器上。
@@ -859,10 +859,9 @@ Packet-In 的處理
             super(EventPacketIn, self).__init__()
             self.msg = msg
 
-ユーザ定義イベントは、ryu.controller.event.EventBaseクラスを継承して作成
-します。イベントクラスに内包するデータに制限はありません。 ``EventPacketIn``
-クラスでは、Packet-Inメッセージで受信したryu.ofproto.OFPPacketInインスタン
-スをそのまま使用しています。
+使用者定義的事件是繼承自 ryu.controller.event.EventBase 類別來達成。
+該類別對於資料的封裝並沒有限制。
+在``EventPacketIn`` 類別中，若是收到了 Packet-In 訊息就會用 ryu.ofproto.OFPPacketIn 實體來像往常一樣處理。
 
 使用者定義的事件接收方法將在之後提到。
 
@@ -870,19 +869,16 @@ Packet-In 的處理
 連接埠啟用/停用狀態的變更以及相關處理
 """""""""""""""""""""""""""""""""""
 
-LACPライブラリのLACPデータユニット受信処理は、以下の処理からなっています。
+LACP 函式庫的 LACP data unit 處理如下：
 
-1. LACPデータユニットを受信したポートが無効状態であれば有効状態に変更
-   し、状態が変更したことをイベントで通知します。
-2. 無通信タイムアウトの待機時間が変更された場合、LACPデータユニット受信時に
-   Packet-Inを送信するフローエントリを再登録します。
-3. 受信したLACPデータユニットに対する応答を作成し、送信します。
+1. 若接收到 LACP data unit 時，連接埠處於停用狀態，這時候會進行狀態的變更，並發送事件通知。
+2. 若停止通訊的逾時數值已經被改變時，收到 LACP data unit 封包後就發送 Packet-In 的 Flow Entry 會再次被新增。
+3. 接收 LACP data unit 後的回應、回覆及傳送。
 
-2.の処理については後述の
-「 `LACPデータユニットをPacket-Inさせるフローエントリの登録`_ 」
-で、3.の処理については後述の
-「 `LACPデータユニットの送受信処理`_ 」
-で、それぞれ説明します。ここでは1.の処理について説明します。
+2. 的處理會在稍後的 「 `新增收到 LACP data unit 後發送 Packet-In 的 Flow Entry`_ 」 描述，
+3. 的處理會在稍後的 「 `收到 LACP data unit 後的處理`_ 」說明。
+接下來說明 1. 的處理流程。
+
 
 .. rst-class:: sourcecode
 
@@ -901,13 +897,10 @@ LACPライブラリのLACPデータユニット受信処理は、以下の処理
             self.send_event_to_observers(
                 EventSlaveStateChanged(datapath, port, True))
 
-_get_slave_enabled()メソッドは、指定したスイッチの指定したポートが有効か否
-かを取得します。_set_slave_enabled()メソッドは、指定したスイッチの指定した
-ポートの有効/無効状態を設定します。
+_get_slave_enabled() 方法是用來取得指定的交換器和指定的連接埠狀態為啟用或停用。
+_set_slave_enabled() 方法是用來設定指定的交換器和指定的連接埠狀態為啟用或停用。
 
-上記のソースでは、無効状態のポートでLACPデータユニットを受信した場合、ポート
-の状態が変更されたということを示す ``EventSlaveStateChanged`` というユーザ
-定義イベントを送信しています。
+在上述的原始碼中，當停用狀態的連接埠接收到了 LACP data unit 時，連接埠的狀態會進行改變並且呼叫 ``EventSlaveStateChanged`` 發送訊息，意即表示連接埠狀態已經改變。
 
 .. rst-class:: sourcecode
 
@@ -923,31 +916,24 @@ _get_slave_enabled()メソッドは、指定したスイッチの指定したポ
             self.port = port
             self.enabled = enabled
 
-``EventSlaveStateChanged`` イベントは、ポートが有効化したときの他に、ポート
-が無効化したときにも送信されます。無効化したときの処理は
-「 `FlowRemovedメッセージの受信処理`_ 」で実装されています。
+除了啟用事件之外，當停用發生時 ``EventSlaveStateChanged`` 事件也會被觸發並發送。
+當連接埠停用時所需執行的動作實作在 「 `收到 FlowRemoved 訊息的處理`_ 」 中。
 
-``EventSlaveStateChanged`` クラスには以下の情報が含まれます。
+``EventSlaveStateChanged`` 類別包含以下的資訊
 
-* ポートの有効/無効状態変更が発生したOpenFlowスイッチ
-* 有効/無効状態変更が発生したポート番号
-* 変更後の状態
+* 連接埠的發生狀態變更時所在的 OpenFlow 交換器
+* 啟用/停用的狀態改變時的連接埠編號
+* 改變後的狀態
 
 
-LACPデータユニットをPacket-Inさせるフローエントリの登録
+新增收到 LACP data unit 後發送 Packet-In 的 Flow Entry
 """""""""""""""""""""""""""""""""""""""""""""""""""""""
+LACP data unit 的傳送間隔定義為 FAST (每隔1秒) 和 SLOW (每隔30秒) 2種。
+Link aggregation 的規格中，傳送間隔的3倍時間若是無任何通訊發生時，則將該界面將自該群組移除，並不再使用于封包的傳送。
 
-LACPデータユニットの交換間隔には、FAST（1秒ごと）とSLOW（30秒ごと）の2種類
-が定義されています。リンク・アグリゲーションの仕様では、交換間隔の3倍の時間無通
-信状態が続いた場合、そのインターフェースはリンク・アグリゲーションのグループ
-から除外され、パケットの転送には使用されなくなります。
+LACP 函式庫中透過設定 Flow Entry 來達到監視通訊的狀態，即當接受到 LACP data unit 時觸發 Packet-In 並進行 Flow Entry 設定為3倍傳送間隔 (SHORT_TIMEOUT_TIME 3 秒、LONG_TIMEOUT_TIME 90秒) 的 idle_timeout。
 
-LACPライブラリでは、LACPデータユニット受信時にPacket-Inさせるフローエントリ
-に対し、交換間隔の3倍の時間（SHORT_TIMEOUT_TIMEは3秒、LONG_TIMEOUT_TIMEは
-90秒）をidle_timeoutとして設定することにより、無通信の監視を行っています。
-
-交換間隔が変更された場合、idle_timeoutの時間も再設定する必要があるため、
-LACPライブラリでは以下のような実装をしています。
+當傳送間隔的設定值改變時，就必須要重新設定 idle_timeout 的時間，因此實作 LACP 函式庫如下。
 
 .. rst-class:: sourcecode
 
@@ -978,16 +964,12 @@ LACPライブラリでは以下のような実装をしています。
 
         # ...
 
-_get_slave_timeout()メソッドは、指定したスイッチの指定したポートにおける現
-在のidle_timeout値を取得します。_set_slave_timeout()メソッドは、指定したス
-イッチの指定したポートにおけるidle_timeout値を登録します。初期状態および
-リンク・アグリゲーション・グループから除外された場合にはidle_timeout値は0に
-設定されているため、新たにLACPデータユニットを受信した場合、交換間隔がどちら
-であってもフローエントリを登録します。
+_get_slave_timeout() 方法可以用來取得指定的交換器之指定連接埠的 idle_timeout 數值。
+_set_slave_timeout() 方法可以用來設定指定的交換器之指定連接埠的 idle_timeout 數值。
+由於初始狀態和移除自 link aggregation 群組的情況下 idle_timeout 為 0，因此接收到新的 LACP data unit 時，傳送間隔將會根據設定被新增到 Flow Entry 中。
 
-使用するOpenFlowのバージョンにより ``OFPFlowMod`` クラスのコンストラクタの
-引数が異なるため、バージョンに応じたフローエントリ登録メソッドを取得していま
-す。以下はOpenFlow 1.2以降で使用するフローエントリ登録メソッドです。
+根據所使用的 OpenFlow 版本不同， ``OFPFlowMod``類別建構子的參數也不相同，因此必須取得所對應版本 Flow Entry 的方法。以下是採用 OpenFlow 1.2 以後所使用的 Flow Entry 新增方法。
+
 
 .. rst-class:: sourcecode
 
@@ -1012,17 +994,13 @@ _get_slave_timeout()メソッドは、指定したスイッチの指定したポ
             instructions=inst)
         datapath.send_msg(mod)
 
-上記ソースで、「対向インターフェースからLACPデータユニットを受信した場合は
-Packet-Inする」というフローエントリを、無通信監視時間つき最高優先度で設定
-しています。
+上述的原始碼為「接收到來自連接的界面所發送的 LACP data unit 時發送 Packet-In」所設定的 Flow Entry ，用於在最高的優先權情況下監視停止通訊的狀態。
 
 
-LACPデータユニットの送受信処理
+傳送/接收  LACP data unit  的處理
 """"""""""""""""""""""""""""""
 
-LACPデータユニット受信時、「 `ポートの有効/無効状態変更に伴う処理`_ 」や
-「 `LACPデータユニットをPacket-Inさせるフローエントリの登録`_ 」を行った
-後、応答用のLACPデータユニットを作成し、送信します。
+接收到 LACP data unit 時，進行「 `連接埠啟用/停用狀態的相關處理`_ 」或 「 `收到 LACP data unit 時發送 Packet-In 並進行 Flow Entry 的新增`_ 」處理以及回覆用的 LACP data unit 產生及發送。
 
 .. rst-class:: sourcecode
 
@@ -1042,15 +1020,12 @@ LACPデータユニット受信時、「 `ポートの有効/無効状態変更�
             data=res_pkt.data, in_port=port, actions=actions)
         datapath.send_msg(out)
 
-上記ソースで呼び出されている_create_response()メソッドは応答用パケット作成
-処理です。その中で呼び出されている_create_lacp()メソッドで応答用のLACPデー
-タユニットを作成しています。作成した応答用パケットは、LACPデータユニットを
-受信したポートからPacket-Outさせます。
+上述的原始碼中，_create_response() 方法是用來產生回覆用的封包。
+其中使用 _create_lacp() 方法則是用來產生回覆用的 LACP data unit 。
+已經完成的回覆用封包則根據所接收的 LACP data unit 發送 Packet-Out。
 
-LACPデータユニットには送信側（Actor）の情報と受信側（Partner）の情報を設定
-します。受信したLACPデータユニットの送信側情報には対向インターフェースの情報
-が記載されているので、OpenFlowスイッチから応答を返すときにはそれを受信側情報
-として設定します。
+LACP data unit 中發送端 (Actor) 的資訊和接收端 (Partner) 的資訊已經被設定完成。
+從接收到的 LACP data unit 可以得到發送端的資訊，因此在製作回覆用的封包時，可以設定在接收端。
 
 .. rst-class:: sourcecode
 
@@ -1081,11 +1056,9 @@ LACPデータユニットには送信側（Actor）の情報と受信側（Partn
         return res
 
 
-FlowRemovedメッセージの受信処理
+接收 FlowRemoved 訊息的處理
 """""""""""""""""""""""""""""""
-
-指定された時間の間LACPデータユニットの交換が行われなかった場合、OpenFlowス
-イッチはFlowRemovedメッセージをOpenFlowコントローラに送信します。
+在指定的傳送間隔時間中沒有進行 LACP data unit 的傳送時，OpenFlow 交換器會發送 FlowRemoved 方法通知 OpenFlow controller。
 
 .. rst-class:: sourcecode
 
@@ -1117,29 +1090,19 @@ FlowRemovedメッセージの受信処理
         self.send_event_to_observers(
             EventSlaveStateChanged(datapath, port, False))
 
-FlowRemovedメッセージを受信すると、OpenFlowコントローラは
-_set_slave_enabled()メソッドを使用してポートの無効状態を設定し、
-_set_slave_timeout()メソッドを使用してidle_timeout値を0に設定し、
-send_event_to_observers()メソッドを使用して ``EventSlaveStateChanged``
-イベントを送信します。
+當接收到 FlowRemoved 方法後，就會使用 _set_slave_enabled() 方法設定連接埠的狀態為停用，使用 _set_slave_timeout() 方法設定 idle_timeout 值為0，使用 send_event_to_observers() 方法發送 ``EventSlaveStateChanged`` 訊息。
 
 
-アプリケーションの実装
+應用程式的實作
 ^^^^^^^^^^^^^^^^^^^^^^
 
-「 `Ryuアプリケーションの実行`_ 」に示したOpenFlow 1.3対応のリンク・アグリ
-ゲーション・アプリケーション (simple_switch_lacp_13.py) と、
-「 :ref:`ch_switching_hub` 」のスイッチングハブとの差異を順に説明していき
-ます。
+現在說明「 `執行 Ryu 應用程式`_ 」中所提到的 OpenFlow 1.3  對應的 link aggregation 應用程式 (simple_switch_lacp_13.py) 和 「 :ref:`ch_switching_hub` 」中的交換器差異點。
 
 
-「_CONTEXTS」の設定
+設定「_CONTEXTS」
 """""""""""""""""""
 
-ryu.base.app_manager.RyuAppを継承したRyuアプリケーションは、「_CONTEXTS」
-ディクショナリに他のRyuアプリケーションを設定することにより、他のアプリケー
-ションを別スレッドで起動させることができます。ここではLACPライブラリの
-LacpLibクラスを「lacplib」という名前で「_CONTEXTS」に設定しています。
+繼承自 ryu.base.app_manager.RyuApp 的 Ryu 應用程式若要啟動其他的應用程式的話，就必須在 「_CONTEXTS」目錄中設定。在啟動其他的應用程式時，會使用另外的執行緒。在這邊我們設定 LACP 函式庫中的 LacpLib 類別名稱為 「lacplib」並放在 「_CONTEXTS」當中。
 
 .. rst-class:: sourcecode
 
@@ -1155,9 +1118,7 @@ LacpLibクラスを「lacplib」という名前で「_CONTEXTS」に設定して
 
         # ...
 
-
-「_CONTEXTS」に設定したアプリケーションは、__init__()メソッドのkwargsから
-インスタンスを取得することができます。
+被設定在 「_CONTEXTS」 中的應用程式可以從 __init__() 方法中的 kwargs 取得實體。
 
 
 .. rst-class:: sourcecode
@@ -1172,22 +1133,20 @@ LacpLibクラスを「lacplib」という名前で「_CONTEXTS」に設定して
         # ...
 
 
-ライブラリの初期設定
+ 函式庫的初始化設定
 """"""""""""""""""""
 
-「_CONTEXTS」に設定したLACPライブラリの初期設定を行います。初期設定には
-LACPライブラリの提供するadd()メソッドを実行します。ここでは以下の値を設定し
-ます。
+初始化設定在「_CONTEXTS」中的 LACP 函式庫。透過執行 LACP 函式庫提供的 add() 方法來完成初始設定。設定的內容如下：
+
 
 ============ ================================= ==============================
-パラメータ   値                                説明
+參數                      參數值                                說明
 ============ ================================= ==============================
-dpid         str_to_dpid('0000000000000001')   データパスID
-ports        [1, 2]                            グループ化するポートのリスト
+dpid         str_to_dpid('0000000000000001')   data path ID
+ports        [1, 2]                            群組化的連接埠列表
 ============ ================================= ==============================
 
-この設定により、データパスID「0000000000000001」のOpenFlowスイッチのポート1と
-ポート2がひとつのリンク・アグリゲーション・グループとして動作します。
+根據以上的設定，data path ID 為 「0000000000000001」 的 OpenFlow 交換器的連接埠1和連接埠2整合為一個 link aggregation group。
 
 
 .. rst-class:: sourcecode
@@ -1201,14 +1160,11 @@ ports        [1, 2]                            グループ化するポートの
         # ...
 
 
-ユーザ定義イベントの受信方法
+使用者自行定義事件的接收方法
 """"""""""""""""""""""""""""
 
-`LACPライブラリの実装`_ で説明したとおり、LACPライブラリはLACPデータユニッ
-トの含まれないPacket-Inメッセージを ``EventPacketIn`` というユーザ定義イ
-ベントとして送信します。ユーザ定義イベントのイベントハンドラも、Ryuが提供す
-るイベントハンドラと同じように ``ryu.controller.handler.set_ev_cls`` デコ
-レータで装飾します。
+在`實作 LACP 函式庫`_ 時我們已經說明，在 LACP 函式庫中處理發送 Packet-In 方法時，LACP data unit  不包含使用者定義的 ``EventPacketIn``。使用者定義的事件管理是在 Ryu 當中提供 ``ryu.controller.handler.set_ev_cls`` 作為裝飾子用來裝飾事件管理。
+
 
 .. rst-class:: sourcecode
 
@@ -1224,9 +1180,7 @@ ports        [1, 2]                            グループ化するポートの
 
         # ...
 
-また、LACPライブラリはポートの有効/無効状態が変更されると
-``EventSlaveStateChanged`` イベントを送信しますので、こちらもイベントハンド
-ラを作成しておきます。
+接著， 當連接埠的狀態變更為啟用或停用時，會透過 LACP 函式庫發送 ``EventSlaveStateChanged`` 事件，因此我們必須建立一個事件管理來處理。
 
 .. rst-class:: sourcecode
 
@@ -1247,11 +1201,8 @@ ports        [1, 2]                            グループ化するポートの
             del self.mac_to_port[dpid]
         self.mac_to_port.setdefault(dpid, {})
 
-本節の冒頭で説明したとおり、ポートの有効/無効状態が変更され
-ると、論理インターフェースを通
-過するパケットが実際に使用する物理インターフェースが変更になる可能性がありま
-す。そのため、登録されているフローエントリを全て削除
-しています。
+在本節開始的時候就有提到，連接埠的啟用/停用狀態變更時，被邏輯界面所使用的實體界面會因為封包的通過而變更狀態。為了這個原因，已經被記錄的 Flow Entry 將會被全部刪除。
+
 
 .. rst-class:: sourcecode
 
@@ -1266,18 +1217,15 @@ ports        [1, 2]                            グループ化するポートの
                                 match=match)
         datapath.send_msg(mod)
 
-フローエントリの削除は ``OFPFlowMod`` クラスのインスタンスで行います。
+透過 ``OFPFlowMod`` 的實體進行 Flow Entry 的刪除動作。
 
-以上のように、リンク・アグリゲーション機能を提供するライブラリと、ライブラリ
-を利用するアプリケーションによって、リンク・アグリゲーション機能を持つスイッ
-チングハブのアプリケーションを実現しています。
+如上所述，一個擁有 link aggregation 功能的交換器可以透過提供 link aggregation 功能的函式庫和使用該函式庫的應用程式來達成。
 
 
-まとめ
+總結
 ------
 
-本章では、リンク・アグリゲーションライブラリの利用を題材として、以下の項目に
-ついて説明しました。
+本章使用 link aggregation 函式庫作為題材說明下列的項目。
 
-* 「_CONTEXTS」を用いたライブラリの使用方法
-* ユーザ定義イベントの定義方法とイベントトリガーの発生方法
+* 如何使用「_CONTEXTS」函式庫
+* 使用者自行定義當事件被觸發時，事件的處理和方法
