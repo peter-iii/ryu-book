@@ -233,7 +233,7 @@ URL跟取得 MAC address table 時的 API 相同，但是 HTTP 在 PUT 的情況
 同樣的 ``list_mac_table`` 方法在 Ryu 所連接的交換器使用未知的 data path ID 的話，同樣會回傳回應碼 404。
 
 包含 REST API 的 Switching Hub 執行
-----------------------------------
+--------------------------------------------------------------------
 
 接下來讓我們執行已經加入 REST API 的 switching hub 吧。
 

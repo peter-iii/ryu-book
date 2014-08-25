@@ -4,7 +4,7 @@ OF-Config 函式庫
 本章將介紹 Ryu 內建的 OF-Config 客戶端函式庫。
 
 OF-Config 通訊協定
--------------------
+--------------------------------------
 
 OF-Config 是用來管理 OpenFlow 交換器的一個通訊協定。
 OF-Config 通訊協定被定義在 NETCONF(RFC 6241) 的標準中，它可以對邏輯交換器的通訊埠(Port)，佇列(Queue)進行設定以及資料截取。
@@ -23,7 +23,7 @@ Ryu 提供的函式庫完全相容于 OF-Config 1.1.1 版本
     而 OF-Config 相對來說還是相對新的協定，期望在不久的將來會有更多實作它的 OpenFlow 交換器出現。
 
 函式庫架構
---------------
+----------------------------
 
 ryu.lib.of_config.capable_switch.OFCapableSwitch Class
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -37,7 +37,7 @@ ryu.lib.of_config.capable_switch.OFCapableSwitch Class
         from ryu.lib.of_config.capable_switch import OFCapableSwitch
 
 ryu.lib.of_config.classes 模組(Module)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 本模組用來將協定相關的設定對應至 Python 物件。
 
@@ -52,7 +52,7 @@ ryu.lib.of_config.classes 模組(Module)
         import ryu.lib.of_config.classes as ofc
 
 使用範例
-------
+------------------
 
 交換器的連結
 ^^^^^^^^^^^^^^^^
@@ -73,7 +73,7 @@ ryu.lib.of_config.classes 模組(Module)
             unknown_host_cb=lambda host, fingeprint: True)
 
 GET
-^^^
+^^^^^^
 
 使用 NETCONF GET 來取得交換器的狀態。
 下面的範例將會用

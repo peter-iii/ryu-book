@@ -866,8 +866,8 @@ Packet-In 的處理
 使用者定義的事件接收方法將在之後提到。
 
 
-連接埠啟用/停用狀態的變更以及相關處理
-"""""""""""""""""""""""""""""""""""
+連接埠啟用/停用狀態的處理
+""""""""""""""""""""""""""""""
 
 LACP 函式庫的 LACP data unit 處理如下：
 
@@ -875,9 +875,9 @@ LACP 函式庫的 LACP data unit 處理如下：
 2. 若停止通訊的逾時數值已經被改變時，收到 LACP data unit 封包後就發送 Packet-In 的 Flow Entry 會再次被新增。
 3. 接收 LACP data unit 後的回應、回覆及傳送。
 
-2. 的處理會在稍後的 「 `新增收到 LACP data unit 後發送 Packet-In 的 Flow Entry`_ 」 描述，
-3. 的處理會在稍後的 「 `收到 LACP data unit 後的處理`_ 」說明。
-接下來說明 1. 的處理流程。
+第二點的處理會在稍後的 「 `新增 Flow Entry - 收到 LACP data unit 時發送 Packet-In`_ 」 描述，
+第三點的處理會在稍後的 「 `傳送/接收 LACP data unit 的處理`_ 」說明。
+接下來說明第一點的處理流程。
 
 
 .. rst-class:: sourcecode
@@ -917,7 +917,7 @@ _set_slave_enabled() 方法是用來設定指定的交換器和指定的連接�
             self.enabled = enabled
 
 除了啟用事件之外，當停用發生時 ``EventSlaveStateChanged`` 事件也會被觸發並發送。
-當連接埠停用時所需執行的動作實作在 「 `收到 FlowRemoved 訊息的處理`_ 」 中。
+當連接埠停用時所需執行的動作實作在 「 `接收 FlowRemoved 訊息時的處理`_ 」 中。
 
 ``EventSlaveStateChanged`` 類別包含以下的資訊
 
@@ -926,8 +926,8 @@ _set_slave_enabled() 方法是用來設定指定的交換器和指定的連接�
 * 改變後的狀態
 
 
-新增收到 LACP data unit 後發送 Packet-In 的 Flow Entry
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""
+新增 Flow Entry - 收到 LACP data unit 時發送 Packet-In
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 LACP data unit 的傳送間隔定義為 FAST (每隔1秒) 和 SLOW (每隔30秒) 2種。
 Link aggregation 的規格中，傳送間隔的3倍時間若是無任何通訊發生時，則將該界面將自該群組移除，並不再使用于封包的傳送。
 
@@ -968,7 +968,7 @@ _get_slave_timeout() 方法可以用來取得指定的交換器之指定連接�
 _set_slave_timeout() 方法可以用來設定指定的交換器之指定連接埠的 idle_timeout 數值。
 由於初始狀態和移除自 link aggregation 群組的情況下 idle_timeout 為 0，因此接收到新的 LACP data unit 時，傳送間隔將會根據設定被新增到 Flow Entry 中。
 
-根據所使用的 OpenFlow 版本不同， ``OFPFlowMod``類別建構子的參數也不相同，因此必須取得所對應版本 Flow Entry 的方法。以下是採用 OpenFlow 1.2 以後所使用的 Flow Entry 新增方法。
+根據所使用的 OpenFlow 版本不同， ``OFPFlowMod`` 類別建構子的參數也不相同，因此必須取得所對應版本 Flow Entry 的方法。以下是採用 OpenFlow 1.2 以後所使用的 Flow Entry 新增方法。
 
 
 .. rst-class:: sourcecode
@@ -997,10 +997,10 @@ _set_slave_timeout() 方法可以用來設定指定的交換器之指定連接�
 上述的原始碼為「接收到來自連接的界面所發送的 LACP data unit 時發送 Packet-In」所設定的 Flow Entry ，用於在最高的優先權情況下監視停止通訊的狀態。
 
 
-傳送/接收  LACP data unit  的處理
-""""""""""""""""""""""""""""""
+傳送/接收 LACP data unit 的處理
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-接收到 LACP data unit 時，進行「 `連接埠啟用/停用狀態的相關處理`_ 」或 「 `收到 LACP data unit 時發送 Packet-In 並進行 Flow Entry 的新增`_ 」處理以及回覆用的 LACP data unit 產生及發送。
+接收到 LACP data unit 時，進行「 `連接埠啟用/停用狀態的處理`_ 」或 「 `新增 Flow Entry - 收到 LACP data unit 時發送 Packet-In`_ 」處理以及回覆用的 LACP data unit 產生及發送。
 
 .. rst-class:: sourcecode
 
@@ -1056,7 +1056,7 @@ LACP data unit 中發送端 (Actor) 的資訊和接收端 (Partner) 的資訊已
         return res
 
 
-接收 FlowRemoved 訊息的處理
+接收 FlowRemoved 訊息時的處理
 """""""""""""""""""""""""""""""
 在指定的傳送間隔時間中沒有進行 LACP data unit 的傳送時，OpenFlow 交換器會發送 FlowRemoved 方法通知 OpenFlow controller。
 
@@ -1132,12 +1132,10 @@ LACP data unit 中發送端 (Actor) 的資訊和接收端 (Partner) 的資訊已
             self._lacp = kwargs['lacplib']
         # ...
 
-
- 函式庫的初始化設定
-""""""""""""""""""""
+函式庫的初始化設定
+""""""""""""""""""""""""""""""""""""""""
 
 初始化設定在「_CONTEXTS」中的 LACP 函式庫。透過執行 LACP 函式庫提供的 add() 方法來完成初始設定。設定的內容如下：
-
 
 ============ ================================= ==============================
 參數                      參數值                                說明
@@ -1162,6 +1160,7 @@ ports        [1, 2]                            群組化的連接埠列表
 
 使用者自行定義事件的接收方法
 """"""""""""""""""""""""""""
+
 
 在`實作 LACP 函式庫`_ 時我們已經說明，在 LACP 函式庫中處理發送 Packet-In 方法時，LACP data unit  不包含使用者定義的 ``EventPacketIn``。使用者定義的事件管理是在 Ryu 當中提供 ``ryu.controller.handler.set_ev_cls`` 作為裝飾子用來裝飾事件管理。
 
