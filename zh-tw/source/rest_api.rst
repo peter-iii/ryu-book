@@ -133,8 +133,8 @@ Constructor 需要取得 ``WSGIApplication``的實體用來註冊 controller 類
 
 所以最後被加入交換器當中的 flow entry 將會如下所示。
 
-* match 條件：in_port = 1, dst_mac = 00:00:00:00:00:02  アクション：output=2
-* match 條件：in_port = 2, dst_mac = 00:00:00:00:00:01  アクション：output=1
+* match 條件：in_port = 1, dst_mac = 00:00:00:00:00:02  action：output=2
+* match 條件：in_port = 2, dst_mac = 00:00:00:00:00:01  action：output=1
 
 flow entry 的加入是由父類別的``add_flow``方法達成。最後透過參數 ``entry`` 傳遞的訊息將會被儲存在 MAC address table.
 

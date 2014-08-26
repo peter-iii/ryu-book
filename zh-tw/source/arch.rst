@@ -23,8 +23,6 @@
 應用程式是繼承 ``ryu.base.app_manager.RyuApp`` 而來。
 User logic 被視作是一個應用程式。
 
-..  XXX他の章への参照  例としてxxx章で紹介したyyy〜などがあります。
-
 事件(Event)
 ^^^^^^^^^^^^^^^^^^^^
 
@@ -63,6 +61,6 @@ eventlet
 藉由使用 ``ryu.controller.handler.set_ev_cls`` 裝飾器類別來定義自己的事件管理器。當定義的事件發生時，應用程式中的事件迴圈將會偵測到並呼叫對應的事件管理器。
 
 ..  XXX CONTEXTS
-..  XXX Event 種類
+..  XXX Event type
 ..  XXX openflow message
-..  XXX ryu-managerなどの説明はどの章???
+..  XXX ryu-manager explain

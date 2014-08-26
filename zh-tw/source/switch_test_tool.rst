@@ -403,17 +403,7 @@ OpenFlow1.3 GroupMod 訊息      全部
 
     測試樣本範本檔案一覽
 
-        match／actions 各種設定 flow entry 新增，
-
-        match／actionsの各設定項目に対応するフローエントリを登録し、
-        フローエントリにmatchする(またはmatchしない)複数パターンのパケット
-        を印加するテストパターンや、一定頻度以上の印加に対して破棄もしくは
-        優先度変更を行うメーターエントリを登録し、メーターエントリにmatch
-        するパケットを連続的に印加するテストパターン、全ポートにFLOODINGする
-        type=ALLのグループエントリや振り分け条件によって出力先ポートを自動的
-        に変更するtype=SELECTのグループエントリを登録し、グループエントリに
-        matchするパケットを連続的に印加するテストパターンが用意されています。
-
+        提供測試樣本檔案包括，對應 match / actions 各種設定的 flow entry 新增：match (或不 match)多數 pattern 的封包改寫、對應滿足一定頻率的後變更優先權的 meta entry 新增：Meta Entry 中 match 的封包連續改寫、對應全連接埠的 FLOODING 的 group entry 新增：group entry 中 match 風包的連續改寫。
 
     .. rst-class:: console
 
@@ -632,10 +622,8 @@ OpenFlow1.3 GroupMod 訊息      全部
 
     待測交換器和輔助交換器已經和 conrtroller 連接下，測試即將開始。
 
-    「dpid=0000000000000002 : receive_packet...」のログ出力から、テスト
-    パターンファイルのegressパケットとして設定した、期待する出力パケット
-    が送信されたことが分かります。
-    なお、ここではテストツールが出力したログのみを抜粋しています。
+    「dpid=0000000000000002 : receive_packet…」的訊息在記錄檔中，表示測試樣本檔案的 egress 封包已經設定完成，送出預期的封包。
+    然後，我們截取部分測試工具的輸出記錄檔。
 
     .. rst-class:: console
 

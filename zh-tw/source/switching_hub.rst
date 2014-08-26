@@ -231,7 +231,7 @@ OpenFlow 交換器的握手協議完成之後新增 Table-miss Flow Entry 到 Fl
 
         # ...
 
-``ev.msg``是用來儲存對應事件的 OpenFlow 訊息類別實體。
+``ev.msg`` 是用來儲存對應事件的 OpenFlow 訊息類別實體。
 在這個例子中則是 ``ryu.ofproto.ofproto_v1_3_parser.OFPSwitchFeatures``。
 
 ``msg.datapath`` 這個訊息是用來儲存 OpenFlow 交換器的 ``ryu.controller.controller.Datapath`` 類別所對應的實體。
